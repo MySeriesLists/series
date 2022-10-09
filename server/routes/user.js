@@ -1,15 +1,20 @@
-import express, { application } from "express";
-import validator from "validator";
-import cookieParser from "cookie-parser";
-import Auth from "../controllers/Auth.js";
+import express from "express";
+import { passwordStrength } from "check-password-strength";
+import MongoStore from "connect-mongo";
+import mongoose from "mongoose";
+import session from "express-session";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
-import jwt from "jsonwebtoken";
-import { passwordStrength } from "check-password-strength";
+
+// import controllers
+import Auth from "../controllers/Auth.js";
 
 const userRouter = express.Router();
-userRouter.use(cookieParser());
+
+// create new instance of Auth
 const auth = new Auth();
+
+
 userRouter.get("/", (req, res) => {
   res.send("Hello World!");
 });
@@ -78,15 +83,31 @@ userRouter.post("/signup", (req, res) => {
   auth
     .signup({ username, password, email, code })
     .then((response) => {
-      res.cookie("auth-token", response.token, {
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 1,
+      // mongo store
+      // session
+      const sessionMiddleware = session({
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        session: {
+          maxAge: 60 * 60 * 1000,
+        },
+        store: new MongoStore({
+          mongoUrl: process.env.MONGODB_URI,
+          collection: "sessions",
+        }),
+        // signed cookie
+        signed: true,
+        cookie: {
+          maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+        },
       });
-      res.cookie("refresh-token", response.refreshToken, {
-        httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24,
+      console.log(response);
+
+      sessionMiddleware(req, res, () => {
+        req.session.user = response.user._id;
+        res.status(200).json({ message: "User created" });
       });
-      res.json(response);
     })
     .catch((error) => {
       console.log(error);
@@ -105,6 +126,8 @@ userRouter.post("/login", (req, res) => {
   auth
     .login({ credential, password, isEmail })
     .then((response) => {
+      console.log(response);
+
       if (response.status === "success") {
         res.cookie("auth-token", response.token, {
           httpOnly: true,
@@ -115,9 +138,27 @@ userRouter.post("/login", (req, res) => {
           maxAge: 24 * 60 * 60 * 1000,
         });
 
-        return res.send(response);
+        // mongo store
+        // session
+        const sessionMiddleware = session({
+          secret: process.env.SESSION_SECRET,
+          resave: false,
+          saveUninitialized: false,
+          session: {
+            maxAge: 60 * 60 * 1000,
+          },
+          store: new MongoStore({
+            mongoUrl: process.env.MONGODB_URI,
+            touchAfter: 24 * 3600,
+          }),
+          signed: true,
+        });
+        sessionMiddleware(req, res, () => {
+          req.session.user = response._id;
+          return res.status(200).json({ message: "User logged in" });
+        });
+
       }
-      res.send(response);
     })
     .catch((error) => {
       console.log(error);

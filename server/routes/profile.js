@@ -1,18 +1,13 @@
-import axios from "axios";
 import express from "express";
-import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
-import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 import Profile from "../controllers/Profile.js";
-import { User } from "../models/User.js";
 
 const userProfile = new Profile();
 
 const profile = express.Router();
 
-profile.use(cookieParser());
 
 profile.use( "/", (req, res, next) => {
     const token = req.cookies["auth-token"];

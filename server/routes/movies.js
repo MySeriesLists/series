@@ -1,22 +1,24 @@
 import express from "express";
 import mongoose from "mongoose";
 import {User} from "../models/User.js";
-import Movie from "../models/Movie.js";
 import MovieController from "../controllers/Movie.js";
 import Profile from "../controllers/Profile.js";
-import verifyToken from "../middleware/verifyToken.js";
 import dotenv from "dotenv";
 dotenv.config({path: "../.env"});
 
 const moviesRouter = express.Router();
 
-//moviesRouter.use(verifyToken);
-
-
-
-
-// verifyToken is a middleware function that checks if the user is logged in
-// and if the token is valid
+moviesRouter.use('/', (req, res, next) => {
+    if(req.originalUrl.includes('search')){
+        next();
+    } else {
+        if(!req.session.user){
+            return res.status(403).json({message: "Unauthorized", error : true  });
+            return;
+        }
+        next();
+    }
+});
 
 try {
 
@@ -38,13 +40,15 @@ mongoose.connection.on("error", (err) => {
 
 // user can select a movie from the list of movies
 // and add it to their favorites list
+
+
 moviesRouter.post("/add-favorite", async (req, res) => {
-    const {movieId, username} = req.body;
-    if(!movieId || !username) {
+    const {movieId} = req.body;
+    if(!movieId){
         return res.status(400).json({error: "No data provided"});
     }
     const movieController = new MovieController();
-    const result = await movieController.addToFavorites({movieId, username});
+    const result = await movieController.addToFavorites({movieId, userId: req.session.user});
     if(result.error) {
         return res.status(result.status).json({error: result.error});
     }
@@ -68,9 +72,9 @@ moviesRouter.post("/remove-favorite", async (req, res) => {
 // add to watchlist
 moviesRouter.post("/add-watchlist", async (req, res) => {
     try {
-        const {movieId, username} = req.body;
+        const {movieId} = req.body;
         const movieObj = new MovieController();
-        const result = await movieObj.addToWatchlist({movieId, username});
+        const result = await movieObj.addToWatchlist({movieId, userId: req.session.user});
         if(result.error) {
             return res.status(result.status).json({error: result.error});
         }
@@ -182,21 +186,23 @@ moviesRouter.post("/search", async (req, res) => {
     }
     const movieController = new MovieController();
     let nextResult = 0;
+    let response = "";
     try {
         do {
             const result = await movieController.searchMovie(search, nextResult);
             if(result.error) {
                 return res.status(result.status).json({error: result.error});
-            }            
-            (result.nextResult) ? nextResult += 10 : nextResult = null;
-           return  res.status(result.status).json({movies: result.movies, nextResult: result.nextResult});
-        }while(nextResult < 17);
+            }
+            console.log(result);
+            response = [...response, result];      
+            nextResult = result.nextResult;
+            if (result.nextResult === null) 
+                break;
+        }while(nextResult < 19); // first 20 results, with 10 results per page
+        return res.status(200).json({response});
 
-            
-    
-        return  res.json(result);
     } catch(e) {
-        console.log("e" , e);
+        return res.status(500).json({error: e});
     }
 });
 

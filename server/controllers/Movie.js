@@ -19,22 +19,23 @@ export default class MovieController {
     }
 
     async addToWatchlist(data) {
+        console.log(data);
         try {
 
-            if (!data.username || !data.movieId) {
+            if ( !data.movieId) {
                 return { error: "No data provided", status: 400 };
             }
 
             const movieId = data.movieId;
-            const user = await User.findOne({ username: data.username });
+            const user = await User.findOne({ _id : data.userId });
             if (!user) {
                 return { error: "User not found", status: 404 };
             }
-            const movie = await Movie.findOne({ movieId: data.movieId });
+            const movie = await Movie.findOne({ imdbId: data.movieId });
             if (!movie) {
                 return { error: "Movie not found", status: 404 };
             }
-            const watchList = await user.watchlist;
+            const watchList = user.watchlist;
             if (watchList.includes(movieId)) {
                 return { error: "Movie already in watchlist", status: 400 };
             }
