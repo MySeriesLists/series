@@ -1,0 +1,46 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meteor314/series.git"
+  },
+  "keywords": [
+    "films",
+    "dataset",
+    "track",
+    "series",
+    "nodejs",
+    "npm",
+    "mern"
+  ],
+  "author": "@meteor314",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/meteor314/series/issues"
+  },
+  "homepage": "https://github.com/meteor314/series#readme",
+  "dependencies": {
+    "axios": "^0.27.2",
+    "bcryptjs": "^2.4.3",
+    "check-password-strength": "^2.0.7",
+    "cookie-parser": "^1.4.6",
+    "cookie-session": "^2.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.1",
+    "express-session": "^1.17.3",
+    "jsonwebtoken": "^8.5.1",
+    "mongoose": "^6.6.3",
+    "morgan": "^1.10.0",
+    "nodemailer": "^6.8.0",
+    "validator": "^13.7.0"
+  }
+}

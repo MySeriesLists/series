@@ -1,0 +1,7 @@
+*.env
+node_modules
+*-lock.json
+series.json
+movies.json
+*.csv
+*.xlsx
