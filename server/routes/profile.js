@@ -33,7 +33,7 @@ profile.get("/:name", (req, res) => {
 
 profile.get("/me", async (req, res) => {
     res.status(200).json({
-      redirect_url: "/profile",
+        redirect_url: "/profile",
     })
 });
 

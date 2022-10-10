@@ -1,4 +1,5 @@
 import express from "express";
+import validator from "validator";
 import { passwordStrength } from "check-password-strength";
 import generateAuthToken from "./generateToken.js";
 import dotenv from "dotenv";
@@ -11,7 +12,6 @@ const userRouter = express.Router();
 
 // create new instance of Auth
 const auth = new Auth();
-
 
 userRouter.get("/", (req, res) => {
   res.send("Hello World!");
@@ -33,13 +33,13 @@ userRouter.get("/google/callback", (req, res) => {
           res.status(400).send(response.error);
         }
         return generateAuthToken(req, res, response.user);
-      }).catch((err) => {
+      })
+      .catch((err) => {
         console.log(err);
         res.status(400).send(err);
       });
   }
 });
-
 
 userRouter.post("/signup", (req, res) => {
   const { username, password, email } = req.body;
@@ -52,30 +52,38 @@ userRouter.post("/signup", (req, res) => {
       .json({ message: "Please enter username, email and password" });
     return;
   }
-  // verify email with regex
-  const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/g;
-  const userRegex = /^[a-zA-Z0-9_\-\.]+$/g;
-  if (!emailRegex.test(email)) {
+  // check if user name is alphanumeric and has a length of 3-20
+  if (
+    !validator.isAlphanumeric(username) ||
+    username.length < 3 ||
+    username.length > 20
+  ) {
+    res
+      .status(500)
+      .json({
+        message: "Username must be alphanumeric and has a length of 3-20",
+      });
+    return;
+  } else if (!validator.isEmail(email)) {
     res.status(500).json({ message: "Please enter a valid email" });
     return;
-  }
-  if (!userRegex.test(username)) {
-    res.status(500).json({ message: "Please enter a valid username" });
+  } else if (passwordStrength(password).id < 2) {
+    res
+      .status(500)
+      .json({
+        message:
+          "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character",
+      });
     return;
   }
-
-  const passwordStrengthResult = passwordStrength(password);
-  if (passwordStrengthResult.id < 2) {
-    res.status(500).json({ message: "Password is too weak" });
-    return;
-  }
-
   auth
     .signup({ username, password, email, code })
     .then((response) => {
       // handle 11000 error
       if (response.code === 11000) {
-        (response.keyPattern.username) ? res.status(500).json({ message: "Username already exists" }) : res.status(500).json({ message: "Email already exists" });
+        response.keyPattern.username
+          ? res.status(500).json({ message: "Username already exists" })
+          : res.status(500).json({ message: "Email already exists" });
         return;
       }
       return generateAuthToken(req, res, response.user);
@@ -85,7 +93,6 @@ userRouter.post("/signup", (req, res) => {
       res.status(400).send(error);
     });
 });
-
 
 userRouter.post("/login", (req, res) => {
   const { credential, password } = req.body;
@@ -132,12 +139,12 @@ userRouter.get("/confirm", (req, res) => {
     });
 });
 
-userRouter.get('/change-password', (req, res) => {
+userRouter.get("/change-password", (req, res) => {
   const { code, email } = req.query;
   console.log(code, email);
   //verify token expiration
   if (!code || !email) {
-    res.status(500).json({ message: 'Please enter a valid code and email' })
+    res.status(500).json({ message: "Please enter a valid code and email" });
     return;
   }
 
@@ -150,9 +157,7 @@ userRouter.get('/change-password', (req, res) => {
       console.log("An error occured :", error);
       res.status(400).send(error);
     });
-})
-
-
+});
 
 userRouter.get("/refresh-token", (req, res) => {
   const refreshToken = req.cookies["refresh-token"];
@@ -196,10 +201,10 @@ userRouter.get("/disable-account", (req, res) => {
     });
 });
 
-userRouter.get('/me', (req, res) => {
-  const authToken = req.cookies['auth-token'];
+userRouter.get("/me", (req, res) => {
+  const authToken = req.cookies["auth-token"];
   if (!authToken) {
-    return res.status(401).send('Access denied');
+    return res.status(401).send("Access denied");
   }
   auth
     .me(authToken)
@@ -212,10 +217,10 @@ userRouter.get('/me', (req, res) => {
     });
 });
 
-userRouter.get('/reset-password', (req, res) => {
+userRouter.get("/reset-password", (req, res) => {
   const { email } = req.query;
   if (!email) {
-    return res.status(500).json({ message: 'Please enter your email' });
+    return res.status(500).json({ message: "Please enter your email" });
   }
   auth
     .resetPassword(email)
@@ -227,8 +232,5 @@ userRouter.get('/reset-password', (req, res) => {
       res.status(400).send(error);
     });
 });
-
-
-
 
 export default userRouter;

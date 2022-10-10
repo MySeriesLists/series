@@ -23,9 +23,9 @@ mongoose.connection.on("error", (err) => {
 });
 
 /**
- * 
- * @param {*} email 
- * @param {*} code 
+ *
+ * @param {*} email
+ * @param {*} code
  * @description send email to user to confirm their account
  * @returns <empty>
  */
@@ -69,10 +69,10 @@ export default class Auth {
   }
 
   /**
-   * 
+   *
    * @param {*} data
-   * @description get user email, name, id to create new user  
-   * @returns 
+   * @description get user email, name, id to create new user
+   * @returns
    */
 
   async signup(data) {
@@ -81,10 +81,10 @@ export default class Auth {
       const image = await user.generateAvatar(data.username);
       user.image = image;
       await user.save();
-      const route  ="confirm";
+      const route = "confirm";
       // send email
       sendEmail(route, user.email, user.code);
-      return { user : user._id };
+      return { user: user._id };
     } catch (error) {
       console.log(error);
       return error;
@@ -92,7 +92,7 @@ export default class Auth {
   }
 
   /**
-   * 
+   *
    * @param {string} data
    * @description create new refresh token
    * @description delete old refresh token
@@ -109,7 +109,7 @@ export default class Auth {
         data.isEmail
       );
       const _id = user._id;
-      if(!_id) {
+      if (!_id) {
         return { status: "error", error: "Invalid login credentials" };
       }
       if (!user.isVerified) {
@@ -118,8 +118,8 @@ export default class Auth {
       if (user.isDisabled) {
         return { status: "error", error: "Your account is disabled" };
       }
-      
-      return { user : user._id };
+
+      return { user: user._id };
     } catch (error) {
       console.log(error);
       return { status: "error" };
@@ -127,30 +127,29 @@ export default class Auth {
   }
 
   /**
-   * 
-   * @param {*} data 
+   *
+   * @param {*} data
    * @description redirect to connected user
    * @returns user
    */
-  
 
   async me(data) {
     // decode token
     const token = data.token;
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ _id: decoded._id});
+    const user = await User.findOne({ _id: decoded._id });
     return user;
   }
 
   /**
-   * 
+   *
    * @param {*} data
-   * @description enable user account 
+   * @description enable user account
    * @returns <success> or <error>
    */
 
   async enableAccount(data) {
-    const user  = await user.findOne({ _id: data._id });
+    const user = await user.findOne({ _id: data._id });
     if (!user) {
       return { status: "error", error: "User not found" };
     }
@@ -165,42 +164,44 @@ export default class Auth {
    * @returns <success> or <error>
    */
 
-
   /**
-   * 
-   * @param {*} data activate user account 
-   * @returns 
+   *
+   * @param {*} data activate user account
+   * @returns
    */
 
   async resetPassword(data) {
-    
     const user = await User.findOne({ email: data });
     if (!user) {
       return { status: "error", error: "User not found" };
     }
     //create one time password
-    const code = Math.random().toString(36).substring(5, 15) + Math.random().toString(36).substring(2, 15);
+    const code =
+      Math.random().toString(36).substring(5, 15) +
+      Math.random().toString(36).substring(2, 15);
     //create a jwt token
-    const token = jwt.sign({code}, process.env.JWT_SECRET, {expiresIn: "1h"});
+    const token = jwt.sign({ code }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
     user.code = code;
     await user.save();
-    const route ="change-password";
+    const route = "change-password";
     // send email
     sendEmail(route, user.email, token);
     return { status: "success" };
   }
 
   /**
-   * 
+   *
    * @param email user email
    * @param code one time token code
-   * @description change user password, if token is valid 
-   * @returns <success> 
+   * @description change user password, if token is valid
+   * @returns <success>
    */
   async changePassword(data) {
     console.log(data);
-    if(!data.code || !data.email ) {
+    if (!data.code || !data.email) {
       return { status: "error", error: "Invalid data" };
     }
     const user = await User.findOne({ email: data.email });
@@ -215,13 +216,14 @@ export default class Auth {
     // crypt password
     const hash = await bcrypt.hash(decoded.code, 10);
     user.password = hash;
-    user.code = null
+    user.code = null;
     await user.save();
-    return { status: "success", message: "Password changed", password: decoded.code };
+    return {
+      status: "success",
+      message: "Password changed",
+      password: decoded.code,
+    };
   }
-
-
-  
 
   async confirm(data) {
     const code = data.code;
@@ -260,7 +262,7 @@ export default class Auth {
    * @description a disabled user cannot login
    * @description a disabled account will be deleted after 30 days
    * @description remove all tokens
-   * 
+   *
    * @param {authToken} data  - authToken
    * @returns delete user from database
    */
@@ -280,7 +282,7 @@ export default class Auth {
    * @description generate google auth url
    */
   async getGoogleAuthURL() {
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}&response_type=code&scope=${process.env.GOOGLE_SCOPE}`
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}&response_type=code&scope=${process.env.GOOGLE_SCOPE}`;
     return url;
   }
 
@@ -323,7 +325,7 @@ export default class Auth {
       const user = await User.findOne({ email: email });
       if (user) {
         // return only user id
-        return {user: user._id };
+        return { user: user._id };
       } else {
         //  verify userName is unique
         let userName = userInfo.data.given_name;
@@ -332,7 +334,9 @@ export default class Auth {
           userName = userName + Math.floor(Math.random() * 1000000);
         }
 
-        const randomPassword =  Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 1000000);
+        const randomPassword =
+          Math.random().toString(36).slice(-8) +
+          Math.floor(Math.random() * 1000000);
         const newUser = new User({
           username: userName,
           email: userInfo.data.email,
@@ -344,8 +348,7 @@ export default class Auth {
         newUser.isVerified = true;
         await newUser.save();
 
-
-        return { user: newUser.user._id };
+        return { user: newUser._id };
       }
     } catch (error) {
       console.log(error);
