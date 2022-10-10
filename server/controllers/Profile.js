@@ -35,11 +35,11 @@ export default class Profile {
         if(!data) {
             return {error: "No data provided", status: 400};
         }
-        console.log("data", data);
         
-        const user = await User.findOne({ username: data }).select("-password").select("-email");
-        console.log("user", user);
-        return user;          
+        const user = await User.findOne({ username: data });
+        const { username,_id,} = user; 
+        console.log(user);
+        return {user : {username, _id}, status: 200};
     }
     
 }

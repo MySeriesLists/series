@@ -1,8 +1,6 @@
 import express from "express";
 import { passwordStrength } from "check-password-strength";
-import MongoStore from "connect-mongo";
-import mongoose from "mongoose";
-import session from "express-session";
+import generateAuthToken from "./generateToken.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 
@@ -20,10 +18,8 @@ userRouter.get("/", (req, res) => {
 });
 
 userRouter.get("/google/login", (req, res) => {
-
-  res.redirect(
-    auth.getGoogleAuthUrl(),
-     );
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile`;
+  res.redirect(url);
 });
 
 userRouter.get("/google/callback", (req, res) => {
@@ -32,25 +28,18 @@ userRouter.get("/google/callback", (req, res) => {
     auth
       .googleAuth(code)
       .then((response) => {
-        res.cookie(
-          "auth-token",
-          response.token,
-          { httpOnly: true },
-          { maxAge: 60 * 60 * 1000 }
-        );
-        res.cookie(
-          "refresh-token",
-          response.refreshToken,
-          { httpOnly: true },
-          { maxAge: 60 * 60 * 1000 }
-        );
-        res.redirect("http://localhost:3000");
-      })
-      .catch((error) => {
-        res.status(400).send(error);
+        console.log("response", response);
+        if (response.error) {
+          res.status(400).send(response.error);
+        }
+        return generateAuthToken(req, res, response.user);
+      }).catch((err) => {
+        console.log(err);
+        res.status(400).send(err);
       });
   }
 });
+
 
 userRouter.post("/signup", (req, res) => {
   const { username, password, email } = req.body;
@@ -80,40 +69,24 @@ userRouter.post("/signup", (req, res) => {
     res.status(500).json({ message: "Password is too weak" });
     return;
   }
+
   auth
     .signup({ username, password, email, code })
     .then((response) => {
-      // mongo store
-      // session
-      const sessionMiddleware = session({
-        secret: process.env.SESSION_SECRET,
-        resave: false,
-        saveUninitialized: false,
-        session: {
-          maxAge: 60 * 60 * 1000,
-        },
-        store: new MongoStore({
-          mongoUrl: process.env.MONGODB_URI,
-          collection: "sessions",
-        }),
-        // signed cookie
-        signed: true,
-        cookie: {
-          maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-        },
-      });
-      console.log(response);
-
-      sessionMiddleware(req, res, () => {
-        req.session.user = response.user._id;
-        res.status(200).json({ message: "User created" });
-      });
+      // handle 11000 error
+      if (response.code === 11000) {
+        (response.keyPattern.username) ? res.status(500).json({ message: "Username already exists" }) : res.status(500).json({ message: "Email already exists" });
+        return;
+      }
+      return generateAuthToken(req, res, response.user);
     })
     .catch((error) => {
       console.log(error);
       res.status(400).send(error);
     });
 });
+
+
 userRouter.post("/login", (req, res) => {
   const { credential, password } = req.body;
   console.log(credential, password);
@@ -126,39 +99,11 @@ userRouter.post("/login", (req, res) => {
   auth
     .login({ credential, password, isEmail })
     .then((response) => {
-      console.log(response);
-
-      if (response.status === "success") {
-        res.cookie("auth-token", response.token, {
-          httpOnly: true,
-          maxAge: 1 * 60 * 60 * 1000,
-        });
-        res.cookie("refresh-token", response.refreshToken, {
-          httpOnly: true,
-          maxAge: 24 * 60 * 60 * 1000,
-        });
-
-        // mongo store
-        // session
-        const sessionMiddleware = session({
-          secret: process.env.SESSION_SECRET,
-          resave: false,
-          saveUninitialized: false,
-          session: {
-            maxAge: 60 * 60 * 1000,
-          },
-          store: new MongoStore({
-            mongoUrl: process.env.MONGODB_URI,
-            touchAfter: 24 * 3600,
-          }),
-          signed: true,
-        });
-        sessionMiddleware(req, res, () => {
-          req.session.user = response._id;
-          return res.status(200).json({ message: "User logged in" });
-        });
-
+      if (response.error) {
+        res.status(400).send(response.error);
+        return;
       }
+      return generateAuthToken(req, res, response.user);
     })
     .catch((error) => {
       console.log(error);
@@ -191,11 +136,11 @@ userRouter.get('/change-password', (req, res) => {
   const { code, email } = req.query;
   console.log(code, email);
   //verify token expiration
-  if(!code || !email) {
-    res.status(500).json({message: 'Please enter a valid code and email'})
+  if (!code || !email) {
+    res.status(500).json({ message: 'Please enter a valid code and email' })
     return;
   }
-  
+
   auth
     .changePassword({ code, email })
     .then((response) => {

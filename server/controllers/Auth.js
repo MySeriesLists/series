@@ -81,12 +81,10 @@ export default class Auth {
       const image = await user.generateAvatar(data.username);
       user.image = image;
       await user.save();
-      const token = await user.generateAuthToken();
       const route  ="confirm";
       // send email
       sendEmail(route, user.email, user.code);
-      const refreshToken = await user.generateRefreshToken();
-      return { user, token, refreshToken };
+      return { user : user._id };
     } catch (error) {
       console.log(error);
       return error;
@@ -104,7 +102,6 @@ export default class Auth {
 
   async login(data) {
     try {
-      console.log(data);
       const credential = data.credential.toLowerCase();
       const user = await User.findByCredentials(
         credential,
@@ -122,10 +119,7 @@ export default class Auth {
         return { status: "error", error: "Your account is disabled" };
       }
       
-      const token = await user.generateAuthToken();
-      // generate refresh token
-      const refreshToken = await user.generateRefreshToken();
-      return { _id, token, refreshToken, status: "success" };
+      return { user : user._id };
     } catch (error) {
       console.log(error);
       return { status: "error" };
@@ -170,6 +164,7 @@ export default class Auth {
    * @param {*} data
    * @returns <success> or <error>
    */
+
 
   /**
    * 
@@ -327,9 +322,8 @@ export default class Auth {
       const email = userInfo.data.email;
       const user = await User.findOne({ email: email });
       if (user) {
-        const token = await user.generateAuthToken();
-        const refreshToken = await user.generateRefreshToken();
-        return { user, token, refreshToken };
+        // return only user id
+        return {user: user._id };
       } else {
         //  verify userName is unique
         let userName = userInfo.data.given_name;
@@ -349,9 +343,9 @@ export default class Auth {
         // delete isVerified
         newUser.isVerified = true;
         await newUser.save();
-        const token = await newUser.generateAuthToken();
-        const refreshToken = await newUser.generateRefreshToken();
-        return { user: newUser, token, refreshToken };
+
+
+        return { user: newUser.user._id };
       }
     } catch (error) {
       console.log(error);
