@@ -15,7 +15,7 @@ export default class Profile {
    * @param {string} name
    * @returns {Promise<{error: string}|{user: User}>}
    * @memberof Profile
-   * @description Get user profile
+   * @describe Get user profile
    * @example
    * const userProfile = new Profile();
    * userProfile.profile({ name: "John" })
@@ -97,6 +97,109 @@ export default class Profile {
       });
 
       return { movies };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * @param {string} name, username
+   * @param {userId}, logged in user
+   * @describe add user to the following list
+   * @returns {Promise<{error: string}|{user: User}>}
+   */
+  async addFollower(data) {
+    try {
+      const { name, userId } = data;
+      const user = await User.findOne({ username: name });
+      const hexId = user._id.toString(); // why is this necessary?
+      if (!user || hexId === userId) {
+        return { error: "User not found", status: 404 };
+      }
+      const following = await User.findOneAndUpdate(
+        { username: name },
+        { $addToSet: { followers: userId } },
+        { new: true }
+      );
+      const followers = await User.findOneAndUpdate(
+        { _id: userId },
+        { $addToSet: { following: user._id.toString() } },
+        { new: true }
+      );
+      return { message: "User added to following list" };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * @param {string} name, (userId logged in user)
+   * @describe remove user from the following list
+   * @returns {Promise<{error: string}|{user: User}>}
+   */
+  async removeFollower(data) {
+    try {
+      const { name, userId } = data;
+      const user = await User.findOne({ username: name });
+      if (!user) {
+        return { error: "User not found", status: 404 };
+      }
+      const following = await User.findOneAndUpdate(
+        { username: name },
+        { $pull: { followers: userId } },
+        { new: true }
+      );
+      const followers = await User.findOneAndUpdate(
+        { _id: userId },
+        { $pull: { following: user._id.toString() } },
+        { new: true }
+      );
+      return { message: "User removed from following list" };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * @param {string} name, username
+   * @param {userId}, logged in user
+   * @describe list of users following the user
+   * @returns {Promise<{error: string}|{user: User}>}
+    */
+  async following(data) {
+    try {
+      const { name, userId } = data;
+      const user = await User.findOne({ username: name });
+      if (!user) {
+        return { error: "User not found", status: 404 };
+      }
+      const following = await User.find({ followers: userId });
+      return { following };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  /**
+   * @param {string} name, username
+   * @param {userId}, logged in user
+   * @describe list of users followers of the user
+   * @returns {Promise<{error: string}|{user: User}>}
+   */
+  async followers(name) {
+    try {
+      console.log("name", name);
+      const user = await User.findOne({ username: name });
+      if (!user) {
+        return { error: "User not found", status: 404 };
+      }
+      // list all users that have the user id in their following list
+      const followers = await User.find({ following: user._id.toString() }).select("_id"); 
+      // list all followers of the user
+      const followings = user.following;
+      console.log("followers", followers);
+      console.log("followings", followings);
+      return { followers,  followings };
     } catch (error) {
       return { error: error.message };
     }

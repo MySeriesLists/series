@@ -119,22 +119,25 @@ commentRouter.post("/downvote-comment-movies", async (req, res) => {
   }
 });
 
-commentRouter.post('/get-comments-movies', async (req, res) => {
-    try {
-        const { imdbId } = req.body;
-        if(!imdbId) {
-            return res.status(400).send({ error: "No data provided!" });
-        }
-
-        
-        const  response = await commentController.getCommentsMovies(imdbId );
-        if(response.error) {
-            return res.status(400).send(response);
-        }
-        return res.status(200).send(response);
-    } catch (error) {
-      return res.status(400).send(error.message);
+commentRouter.post("/get-comments-movies", async (req, res) => {
+  try {
+    let { imdbId, next } = req.body;
+    if (!imdbId) {
+      return res.status(400).send({ error: "No data provided!" });
     }
+    !next ? (next = 0) : next;
+
+    const response = await commentController.getCommentsMovies({
+      imdbId,
+      next,
+    });
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
 });
 
 export default commentRouter;

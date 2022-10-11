@@ -66,6 +66,14 @@ const userSchema = new mongoose.Schema({
     type: [Object],
     required: false,
   },
+  following: {
+    type: [Object],
+    required: false,
+  },
+  followers: {
+    type: [Object],
+    required: false,
+  },
 });
 // Generate an auth token and refresh token for the user
 userSchema.methods = {

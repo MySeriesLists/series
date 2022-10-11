@@ -155,7 +155,7 @@ export default class Comment {
         );
       }
       await commentToUpvote.save();
-      return { comment: commentToUpvote };
+      return { status: 200, message: "success" };
     } catch (error) {
       return { error: error.message };
     }
@@ -193,7 +193,7 @@ export default class Comment {
         );
       }
       await commentToDownvote.save();
-      return { comment: commentToDownvote };
+      return { status: 200, message: "success" };
     } catch (error) {
       return { error: error.message };
     }
@@ -204,16 +204,36 @@ export default class Comment {
    * @description get all comments for a movie, limit to 10
    * @returns {Promise<{error: string}|{user: User}>}
    */
-    async getCommentsMovies(imdbId) {
+  async getCommentsMovies(data) {
+    try {
+      console.log("data", data);
 
-        try {
-            const comments = await MoviesComments.find({ imdbId: imdbId })
-            .limit(10)
-            .sort({ createdAt: -1 })
-            .populate("userId", "username");
-            return { comments };
-        } catch (error) {
-            return { error: error.message };
-        }
-        }
+      const imdbId = data.imdbId;
+      let next = data.next;
+
+      console.log("imdId", imdbId);
+      console.log("next", next);
+      const comments = await MoviesComments.find({ imdbId: imdbId })
+        .limit(next)
+        .sort({ createdAt: -1 })
+        .populate("userId", "username");
+
+      // only return upvotes and downvotes count
+      const commentsWithVotes = comments.map((comment) => {
+        return {
+          _id: comment._id,
+          comment: comment.comment,
+          userId: comment.userId,
+          createdAt: comment.createdAt,
+          upvotes: comment.upvotes.length,
+          downvotes: comment.downvotes.length,
+        };
+      });
+      next = next + 10 > commentsWithVotes.length ? null : next + 10;
+
+      return { comments: commentsWithVotes, next: next };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
 }
