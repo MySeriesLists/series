@@ -5,6 +5,8 @@ import morgan from "morgan";
 import session from "express-session";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { createServer } from "http";
+import { Server } from "socket.io";
 dotenv.config({ path: "../.env" });
 const app = express();
 
@@ -13,6 +15,7 @@ import userRouter from "./routes/user.js";
 import profile from "./routes/profile.js";
 import movies from "./routes/movies.js";
 import commentRouter from "./routes/comments.js";
+import messageRouter from "./routes/messages.js";
 
 // use middleware
 app.use(express.json());
@@ -49,6 +52,7 @@ app.use("/auth", userRouter);
 app.use("/profile", profile);
 app.use("/movies", movies);
 app.use('/comments', commentRouter);
+app.use('/messages', messageRouter);
 
 app.get("/", (req, res) => {
   if (req.session.user) {
