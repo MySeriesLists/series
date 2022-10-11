@@ -1,7 +1,7 @@
 import express from "express";
 import validator from "validator";
 import { passwordStrength } from "check-password-strength";
-import generateAuthToken from "./generateToken.js";
+import generateAuthToken from "../utils/generateToken.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 

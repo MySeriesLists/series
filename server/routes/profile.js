@@ -1,5 +1,4 @@
 import express from "express";
-import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 import Profile from "../controllers/Profile.js";
@@ -8,33 +7,37 @@ const userProfile = new Profile();
 
 const profile = express.Router();
 
-profile.get("/:name", (req, res) => {
-    const { name } = req.params;
 
-    if (name) {
-        userProfile
-            .profile({ name })
-            .then((response) => {
-                console.log("response", response);
-                if (response.error) {
-                    res.status(400).send(response.error);
-                }
-                res.status(200).send(response);
-            })
-            .catch((error) => {
-                res.status(400).send(error);
-            });
-    } else {
-        res.status(400).json({ message: "Invalid name" });
+profile.get("/:name", async (req, res) => {
+  try {
+    const { name } = req.params;
+    const response = await userProfile.profile({ name });
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+profile.post('/movies-list', async (req, res) => {
+    try {
+        const { name, code, next } = req.body;
+        
+        if(!name) {
+            return res.status(400).send({ error: "Invalid username" });
+        }
+        const response = await userProfile.moviesList({ name, code });
+
+        if (response.error) {
+            return res.status(400).send(response);
+        }
+        return res.status(200).send(response);
+    } catch (error) {
+        return res.status(400).send(error.message);
     }
 });
 
-
-
-profile.get("/me", async (req, res) => {
-    res.status(200).json({
-        redirect_url: "/profile",
-    })
-});
 
 export default profile;

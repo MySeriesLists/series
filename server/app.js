@@ -12,7 +12,7 @@ const app = express();
 import userRouter from "./routes/user.js";
 import profile from "./routes/profile.js";
 import movies from "./routes/movies.js";
-import mongoose from "mongoose";
+import commentRouter from "./routes/comments.js";
 
 // use middleware
 app.use(express.json());
@@ -48,6 +48,7 @@ app.use(
 app.use("/auth", userRouter);
 app.use("/profile", profile);
 app.use("/movies", movies);
+app.use('/comments', commentRouter);
 
 app.get("/", (req, res) => {
   if (req.session.user) {
