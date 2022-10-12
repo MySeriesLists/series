@@ -46,6 +46,7 @@
     "validator": "^13.7.0"
   },
   "devDependencies": {
+    "clean-jsdoc-theme": "^4.1.8",
     "mocha": "^10.0.0",
     "supertest": "^6.3.0"
   }

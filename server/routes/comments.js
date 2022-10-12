@@ -4,8 +4,17 @@ import Comment from "../controllers/Comment.js";
 const commentController = new Comment();
 const commentRouter = epxress.Router();
 
+/**
+ * @middleware  - check if user is logged in
+ * @description - check if user is logged in
+ * @param       - req, res, next
+ * @returns     - next()
+ */
+
 commentRouter.use((req, res, next) => {
-  console.log("Time: ", Date.now());
+  if(req.originalUrl.includes('get-comments-movies')) {
+    next();
+  }
   if (!req.session.user) {
     return res.status(401).send({ error: "Unauthorized" });
   }
@@ -16,9 +25,30 @@ commentRouter.use((req, res, next) => {
   next();
 });
 
+/**
+ * @route       - POST /
+ * @description - test route
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ **/
+
 commentRouter.get("/", (req, res) => {
   res.send("Hello from comment router");
 });
+
+/**
+ * @route       - POST /post-create-comment
+ * @description - create comment
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - movieId, comment
+ * @bodyType    - string, string
+ * @bodyExample - "5f9f1b9b0b1b9c0b8c8b9b9a", "This is a comment"
+ * @response    - {status: "success", comment: comment}
+ * @responseType- {string, object}
+ */ 
 
 commentRouter.post("/post-comment-movies", async (req, res) => {
   try {
@@ -41,6 +71,19 @@ commentRouter.post("/post-comment-movies", async (req, res) => {
   }
 });
 
+/**
+ * @route       - POST /edit-create-comment
+ * @description - edit comment
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - commentId, comment
+ * @bodyType    - string, string
+ * @bodyExample - "5f9f1b9b0b1b9c0b8c8b9b9a", "This is an updated comment"
+ * @response    - {status: "success", comment: comment}
+ * @responseType- {string, object}
+ */
+
 commentRouter.patch("/edit-comment-movies", async (req, res) => {
   try {
     const { comment, imdbId, commentId } = req.body;
@@ -62,6 +105,20 @@ commentRouter.patch("/edit-comment-movies", async (req, res) => {
   }
 });
 
+/**
+ * @route       - POST /delete-comment-movies
+ * @description - delete comment
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - commentId 
+ * @bodyType    - string
+ * @bodyExample - "5f9f1b9b0b1b9c0b8c8b9b9a"
+ * @response    - {status: "success", comment: comment}
+ * @responseType- {string, object}
+ * 
+ */
+
 commentRouter.delete("/delete-comment-movies", async (req, res) => {
   try {
     const { commentId } = req.body;
@@ -81,6 +138,18 @@ commentRouter.delete("/delete-comment-movies", async (req, res) => {
   }
 });
 
+/**
+ * @route       - POST /upvote-comments-movies
+ * @description - upvote comment
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - commentId
+ * @bodyType    - string
+ * @bodyExample - "5f9f1b9b0b1b9c0b8c8b9b9a"
+ * @response    - {status: "success", comment: comment}
+ * @responseType- {string, object}
+ */
 commentRouter.post("/upvote-comment-movies", async (req, res) => {
   try {
     const { commentId } = req.body;
@@ -99,6 +168,19 @@ commentRouter.post("/upvote-comment-movies", async (req, res) => {
     return res.status(400).send(error.message);
   }
 });
+
+/**
+ * @route       - POST /downvote-comments-movies
+ * @description - downvote comment
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - commentId
+ * @bodyType    - string
+ * @bodyExample - "5f9f1b9b0b1b9c0b8c8b9b9a"
+ * @response    - {status: "success", comment: comment}
+ * @responseType- {string, object}
+ */
 
 commentRouter.post("/downvote-comment-movies", async (req, res) => {
   try {
@@ -119,6 +201,18 @@ commentRouter.post("/downvote-comment-movies", async (req, res) => {
   }
 });
 
+/**
+ * @route       - POST /get-comments-movies
+ * @description - get comments
+ * @param       - req, res
+ * @returns     - res
+ * @access      - public
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "5f9f1b9b0b1b9c0b8c8b9b9a"
+ * @response    - {status: "success", comments: comments}
+ * @responseType- {string, object}
+ */
 commentRouter.post("/get-comments-movies", async (req, res) => {
   try {
     let { imdbId, next } = req.body;

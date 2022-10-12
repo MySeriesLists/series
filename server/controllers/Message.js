@@ -10,7 +10,7 @@ export default class Message {
    * @param {mongoId} sender
    * @param {mongoId} receiver
    * @param {string} message
-   * @describe Create new message
+   * @description Create new message
    * @returns
    */
   async createMessage(sender, receiver, message) {
@@ -37,7 +37,7 @@ export default class Message {
   /**
    * @param {mongoId} sender
    * @param {mongoId} receiver
-   * @describe get all messages between two users
+   * @description get all messages between two users
    * @returns
    */
   async getMessages(sender, receiver, offset, limit) {

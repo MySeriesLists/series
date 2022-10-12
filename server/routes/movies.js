@@ -12,6 +12,15 @@ const moviesRouter = express.Router();
 const profile = new Profile();
 const movieController = new MovieController();
 
+/**
+ * @middleware check if user is logged in except for search
+ * @param {string} req
+ * @param {string} res
+ * @param {string} next
+ * @returns {string} next()
+ * @access logged in user
+ */
+
 moviesRouter.use("/", (req, res, next) => {
   if (req.originalUrl.includes("search")) {
     next();
@@ -24,8 +33,46 @@ moviesRouter.use("/", (req, res, next) => {
   }
 });
 
-// user can select a movie from the list of movies
-// and add it to their favorites list
+/**
+ * @route -get /:name
+ * @param {string} name
+ * @description Get movie info
+ * @returns {Promise<{error: string}|{user: User}>}
+ */
+
+moviesRouter.get("/:_id", async (req, res) => {
+  try {
+    const { _id } = req.params;
+    if(!_id) return res.status(400).send({error: "Invalid movie name"})
+    const response = await movieController.movieInfo({ _id });
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+
+
+/**
+ * @route       - post /add-favorite
+ * @description    - add movie to favorites,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and add it to their favorites list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie added to favorites"}
+ * @responseType - {string, string}
+ * @response     - {status: "error", message: "Movie already in favorites"}
+ * @responseType - {string, string}
+ * @response     - {status: "error", message: "Movie not found"}
+ */
 
 moviesRouter.post("/add-favorite", async (req, res) => {
   try {
@@ -48,7 +95,23 @@ moviesRouter.post("/add-favorite", async (req, res) => {
   }
 });
 
-// user can remove a movie from their favorites list
+/**
+ * @route       - post /remove-favorite
+ * @description    - remove movie from favorites,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and remove it from their favorites list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie removed from favorites"}
+ * @responseType - {string, string}
+ * @response     - {status: "error", message: "Movie not in favorites"}
+ 
+ */
+
 moviesRouter.post("/remove-favorite", async (req, res) => {
   try {
     const { imdbId } = req.body;
@@ -70,6 +133,16 @@ moviesRouter.post("/remove-favorite", async (req, res) => {
   }
 });
 
+/**
+ * @route       - get /favorites
+ * @description    - get user's favorites
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @response    - {status: "success", message: "Movies found", movies: []}
+ * @responseType - {string, string, array} 
+ */
+
 // list of movies, series that the user has added to their favorites list
 moviesRouter.get("/favorites", async (req, res) => {
   try {
@@ -89,7 +162,21 @@ moviesRouter.get("/favorites", async (req, res) => {
   }
 });
 
-// add to watchlist
+/**
+ * @route       - post /add-watchlist
+ * @description    - add movie to watchlist,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and add it to their watchlist
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie added to watchlist"}
+ * @responseType - {string, string}
+ */
+
 moviesRouter.post("/add-watchlist", async (req, res) => {
   try {
     const { imdbId } = req.body;
@@ -108,7 +195,21 @@ moviesRouter.post("/add-watchlist", async (req, res) => {
   }
 });
 
-// remove from watchlist
+/**
+ * @route       - post /remove-watchlist
+ * @description    - remove movie from watchlist,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and remove it from their watchlist
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie removed from watchlist"}
+ * @responseType - {string, string}
+ */
+
 moviesRouter.post("/remove-watchlist", async (req, res) => {
   try {
     const { imdbId } = req.body;
@@ -130,6 +231,16 @@ moviesRouter.post("/remove-watchlist", async (req, res) => {
   }
 });
 
+/**
+ * @route       - get /watchlist
+ * @description    - get user's watchlist
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @response    - {status: "success", message: "Movies found", movies: []}
+ * @responseType - {string, string, array}
+ */
+
 moviesRouter.get("/watchlist", async (req, res) => {
   try {
     const result = await movieController.getWatchlist({
@@ -149,7 +260,20 @@ moviesRouter.get("/watchlist", async (req, res) => {
   }
 });
 
-// film completed
+/**
+ * @route       - post /add-completed
+ * @description    - add movie to completed list,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and add it to their completed list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie added to completed list"}
+ */
+
 moviesRouter.post("/add-completed", async (req, res) => {
   try {
     const { imdbId } = req.body;
@@ -167,7 +291,20 @@ moviesRouter.post("/add-completed", async (req, res) => {
       .json({ error: "Internal server error", err: err.message });
   }
 });
-// remove from completed
+
+/**
+ * @route       - post /remove-completed
+ * @description    - remove movie from completed list,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and remove it from their completed list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie removed from completed list"}
+ */
 moviesRouter.post("/remove-completed", async (req, res) => {
   try {
     const { imdbId } = req.body;
@@ -189,6 +326,16 @@ moviesRouter.post("/remove-completed", async (req, res) => {
   }
 });
 
+/**
+ * @route       - get /completed
+ * @description    - get user's completed list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @response    - {status: "success", message: "Movies found", movies: []}
+ * @responseType - {string, string, array}
+ */
+
 moviesRouter.get("/completed", async (req, res) => {
   try {
     const result = await movieController.getCompletedList({
@@ -208,6 +355,21 @@ moviesRouter.get("/completed", async (req, res) => {
   }
 });
 
+/**
+ * @route       - post /add-watching
+ * @description    - add movie to watching list,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and add it to their watching list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie added to watching list"}
+ * @responseType - {string, string}
+ */
+
 moviesRouter.post("/add-watching", async (req, res) => {
   try {
     const { imdbId } = req.body;
@@ -225,6 +387,21 @@ moviesRouter.post("/add-watching", async (req, res) => {
       .json({ error: "Internal server error", err: err.message });
   }
 });
+
+/** 
+ * @route       - post /remove-watching
+ * @description    - remove movie from watching list,
+ * @description    - user can select a movie from the list of movies
+ * @description    - and remove it from their watching list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId
+ * @bodyType    - string
+ * @bodyExample - "tt0111161"
+ * @response    - {status: "success", message: "Movie removed from watching list"}
+ * @responseType - {string, string}
+ */
 
 moviesRouter.post("/remove-watching", async (req, res) => {
   try {
@@ -247,6 +424,16 @@ moviesRouter.post("/remove-watching", async (req, res) => {
   }
 });
 
+/**
+ * @route       - get /watching
+ * @description    - get user's watching list
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @response    - {status: "success", message: "Movies found", movies: []}
+ * @responseType - {string, string, array}
+ */
+
 moviesRouter.get("/watching", async (req, res) => {
   try {
     const result = await movieController.getWatchingList({
@@ -259,6 +446,40 @@ moviesRouter.get("/watching", async (req, res) => {
     return res
       .status(result.status)
       .json({ movies: result.movies, nextResult: result.nextResult });
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: "Internal server error", err: err.message });
+  }
+});
+
+/**
+ * @route       - post /add-progress
+ * @description    - add series to progress list, (series only)
+ * @description    - user can select a series from the list of series and update episode number and season number
+ * @param       - req, res
+ * @returns     - res
+ * @access      - logged in user
+ * @body        - imdbId, season, episode
+ * @bodyType    - string, number, number
+ * @bodyExample - "tt0111161", 1, 1
+ * @response    - {status: "success", message: "Series added to progress list"}
+ * @responseType - {string, string}
+ */
+
+moviesRouter.post("/add-progress", async (req, res) => {
+  try {
+    const { imdbId, episode, season } = req.body;
+    const result = await movieController.addProgress({
+      imdbId,
+      userId: req.session.user,
+      episode,
+      season,
+    });
+    if (result.error) {
+      return res.status(result.status).json({ error: result.error });
+    }
+    return res.status(result.status).json({ message: result.message });
   } catch (err) {
     return res
       .status(500)

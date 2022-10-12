@@ -7,6 +7,12 @@ const userProfile = new Profile();
 
 const profile = express.Router();
 
+/**
+ * @param {string} name
+ * @description Get user profile
+ * @returns {Promise<{error: string}|{user: User}>}
+ */
+
 profile.get("/:name", async (req, res) => {
   try {
     const { name } = req.params;
@@ -19,6 +25,18 @@ profile.get("/:name", async (req, res) => {
     return res.status(400).send(error.message);
   }
 });
+
+/**
+ * @param {string} name
+ * @param {string} code, category (watching, completed, favorites, watchList)
+ * @param {int} next, next page 
+ * @description get list of movies, depending on the code
+ * if code === "favorites" return favorites
+ * if code === "completed" return completed
+ * if code === "watching" return watching
+ * if code === "watchList" return watchList
+ * @returns {Promise<{error: string}|{user: User}>}
+ */
 
 profile.post("/movies-list", async (req, res) => {
   try {
@@ -36,6 +54,14 @@ profile.post("/movies-list", async (req, res) => {
     return res.status(400).send(error.message);
   }
 });
+
+/**
+ * @route /profile/:name
+ * @param {string} name
+ * @description add follower
+ * @returns {Promise<{error: string}|{user: User}>}
+ *  
+ */
 
 profile.get("/add-follower/:name", async (req, res) => {
   try {

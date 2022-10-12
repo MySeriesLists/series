@@ -15,7 +15,7 @@ export default class Profile {
    * @param {string} name
    * @returns {Promise<{error: string}|{user: User}>}
    * @memberof Profile
-   * @describe Get user profile
+   * @description Get user profile
    * @example
    * const userProfile = new Profile();
    * userProfile.profile({ name: "John" })
@@ -64,7 +64,7 @@ export default class Profile {
    * @param {string} code, category (watching, completed, favorites, watchList)
    * @param {string} name, username
    * @next {int} next, next page
-   * @describe get list of movies, depending on the code
+   * @description get list of movies, depending on the code
    * if code === "favorites" return favorites
    * if code === "completed" return completed
    * if code === "watching" return watching
@@ -105,7 +105,7 @@ export default class Profile {
   /**
    * @param {string} name, username
    * @param {userId}, logged in user
-   * @describe add user to the following list
+   * @description add user to the following list
    * @returns {Promise<{error: string}|{user: User}>}
    */
   async addFollower(data) {
@@ -134,7 +134,7 @@ export default class Profile {
 
   /**
    * @param {string} name, (userId logged in user)
-   * @describe remove user from the following list
+   * @description remove user from the following list
    * @returns {Promise<{error: string}|{user: User}>}
    */
   async removeFollower(data) {
@@ -163,7 +163,7 @@ export default class Profile {
   /**
    * @param {string} name, username
    * @param {userId}, logged in user
-   * @describe list of users following the user
+   * @description list of users following the user
    * @returns {Promise<{error: string}|{user: User}>}
     */
   async following(data) {
@@ -183,7 +183,7 @@ export default class Profile {
   /**
    * @param {string} name, username
    * @param {userId}, logged in user
-   * @describe list of users followers of the user
+   * @description list of users followers of the user
    * @returns {Promise<{error: string}|{user: User}>}
    */
   async followers(name) {

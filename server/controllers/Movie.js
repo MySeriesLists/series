@@ -15,6 +15,24 @@ export default class MovieController {
   }
 
   /**
+   * @param {String} imdbId
+   * @description show movie details
+   * @returns {Object} movie
+   */
+
+  async movieInfo(data) {
+    try {
+      const movie = await Movie.findOne({ imdbId: data._id });
+      if (!movie) {
+        return { error: "Movie not found", status: 404 };
+      }
+      return { movie };
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+
+  /**
    * @param {string} imdbId
    * @param {mongoId} userId
    * @description checks if a movie is in the user's watchlist, if not, adds it
@@ -66,8 +84,6 @@ export default class MovieController {
         const index = completed.indexOf(movieExistsCompleted);
         completed.splice(index, 1);
       }
-
-
 
       // save the user
       await user.save();
@@ -473,6 +489,48 @@ export default class MovieController {
       // save the user
       await user.save();
       return { message: "Movie added to watching", status: 200 };
+    } catch (error) {
+      console.log(error);
+      return error;
+    }
+  }
+  /**
+   * @param {mongoId} data, userId
+   * @param {imdbId}
+   * @description id of the movie (type :tvSeries), add progress to the watching list (with the episode number and season number)
+   * @returns {message, status}
+   */
+  async addProgress(data) {
+    try {
+      if (!data.imdbId || !data.episode || !data.season) {
+        return { error: "No data provided", status: 400 };
+      }
+      const imdbId = data.imdbId;
+      const user = await User.findOne({ _id: data.userId });
+      if (!user) {
+        return { error: "User not found", status: 404 };
+      }
+      const movie = await Movie.findOne({ imdbId: data.imdbId });
+      if (!movie) {
+        return { error: "Movie not found", status: 404 };
+      }
+      if (movie.type !== "tvSeries") {
+        return { error: "Movie is not a tvSeries", status: 400 };
+      }
+      const watching = user.watching;
+      const movieExists = watching.find((movie) => movie.imdbId === imdbId);
+      if (movieExists) {
+        // update the progress
+        if(episodes.length <= data.episode || seasons.length <= data.season){
+          movieExists.progress = {
+            episode: data.episode,
+            season: data.season,
+          };
+        }else{
+          return { error: "Invalid episode or season number", status: 400 };
+        }
+      }
+      return { message: "Movie progress updated", status: 200 };
     } catch (error) {
       console.log(error);
       return error;

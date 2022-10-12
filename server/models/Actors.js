@@ -1,6 +1,14 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
+/**
+ * @typedef {Object} Message
+ * @property {string} sender
+ * @property {string} receiver
+ * @property {string} message
+ * @property {Date} date
+ */
+
 export default mongoose.model("Actors", new Schema({
     imdbId : {
         type: String,
