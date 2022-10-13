@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-export default class Signin extends Component {
+export default class ForgetPassword extends Component {
   notify = (props) =>
     toast(props.message, {
       position: "top-right",
@@ -27,7 +27,7 @@ export default class Signin extends Component {
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
-        return  window.location.href = data.url;
+        return (window.location.href = data.url);
       })
       .catch((err) => {
         console.log(err);
@@ -36,29 +36,25 @@ export default class Signin extends Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-    const credential = document
-      .getElementById("credential")
-      .value.toLowerCase();
-    const password = document.getElementById("password").value;
-    const data = { credential, password };
-    if (credential === "" || password === "") {
+    const email = document.getElementById("email").value.toLowerCase().trim();
+    if (email === "") {
       console.log("Please fill in all fields");
       return this.notify({ message: "Please fill in all fields" });
     }
-    fetch("/auth/login", {
-      method: "POST",
+    fetch(`/auth/reset-password?email=${email}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
     })
       .then((res) => res.json())
       .then((data) => {
         console.log(data);
-        if (data.success) {
-          window.location.href = "/";
-        } else {
-          this.notify({ message: data.message });
+        if (data.error) return this.notify({ message: data.error });
+        if (data.status === "success") {
+          return this.notify({
+            message: "Please check your email, an invitation has been send!",
+          });
         }
       })
       .catch((err) => {
@@ -92,20 +88,11 @@ export default class Signin extends Component {
                 </button>
               </div>
               <div className="form-group mt-3">
-                <label>Email address or username</label>
                 <input
+                  type="mail"
                   className="form-control "
-                  placeholder="@username"
-                  id="credential"
-                />
-              </div>
-              <div className="form-group mt-3">
-                <label>Password</label>
-                <input
-                  type="password"
-                  className="form-control mt-1"
-                  placeholder="Enter password"
-                  id="password"
+                  placeholder="Please enter your email..."
+                  id="email"
                 />
               </div>
               <div className="text-center">
@@ -118,15 +105,10 @@ export default class Signin extends Component {
                 </button>
               </div>
               <p className="forgot-password text-right mt-2">
-                Forgot <a href="/forget-password">password?</a>
+                Already have an account <a href="/signin">Sign in</a>
               </p>
             </div>
           </form>
-          <div className="Auth-form-footer">
-            <p className="text-center">
-              Don't have an account? <a href="/signup">Sign up</a>
-            </p>
-          </div>
         </div>
       </>
     );

@@ -636,6 +636,7 @@ export default class MovieController {
         imdbId: 1,
         images: 1,
         raiting: 1,
+        description: 1,
         _id: 0,
         type: 1,
       }; // only return title, imdbId, images, rating

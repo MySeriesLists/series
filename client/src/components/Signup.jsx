@@ -14,7 +14,8 @@ class Signup extends Component {
       theme: "dark",
     });
 
-  connectWithGoogle = () => {
+  connectWithGoogle = (e) => {
+    e.preventDefault();
     fetch("/auth/google/login", {
       method: "GET",
       headers: {
@@ -109,18 +110,7 @@ class Signup extends Component {
   render() {
     return (
       <>
-        <ToastContainer
-          position="top-center"
-          autoClose={5000}
-          hideProgressBar={true}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
+        <ToastContainer />
         <ToastContainer />
         <div className="Auth-form-container">
           <form className="Auth-form">
@@ -191,7 +181,7 @@ class Signup extends Component {
           </form>
           <div className="Auth-form-footer">
             <p className="text-center">
-              Already have an account? <a href="#">Sign in</a>
+              Already have an account? <a href="/signin">Sign in</a>
             </p>
           </div>
         </div>

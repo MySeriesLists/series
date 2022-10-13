@@ -28,7 +28,6 @@ userRouter.get("/google/callback", (req, res) => {
     auth
       .googleAuth(code)
       .then((response) => {
-        console.log("response", response);
         if (response.error) {
           res.status(400).send(response.error);
         }
@@ -107,14 +106,15 @@ userRouter.post("/login", (req, res) => {
     .login({ credential, password, isEmail })
     .then((response) => {
       if (response.error) {
-        res.status(400).send(response.error);
+        res.status(400).send({ message: response.error });
+
         return;
       }
       return generateAuthToken(req, res, response.user);
     })
     .catch((error) => {
       console.log(error);
-      res.status(400).send(error);
+      res.status(400).json({ message: "Invalid username or password" });
     });
 });
 userRouter.post("/logout", (req, res) => {

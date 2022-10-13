@@ -77,32 +77,6 @@ const userSchema = new mongoose.Schema({
 });
 // Generate an auth token and refresh token for the user
 userSchema.methods = {
-  generateAuthToken: async function () {
-    try {
-      const user = this;
-      const token = jwt.sign({ _id: user._id }, process.env.JWT_AUTH_KEY, {
-        expiresIn: "1h",
-      });
-      return token;
-    } catch (error) {
-      console.log(error);
-      return error;
-    }
-  },
-  generateRefreshToken: async function () {
-    try {
-      const user = this;
-      const refreshToken = jwt.sign(
-        { _id: user._id },
-        process.env.JWT_REFRESH_KEY,
-        { expiresIn: "1d" }
-      );
-      return refreshToken;
-    } catch (error) {
-      console.log(error);
-      return error;
-    }
-  },
   generateAvatar: async function (userName) {
     // generate avatar with user._id with loadash
     try {
