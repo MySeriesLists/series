@@ -4,5 +4,8 @@
   },
   "scripts": {
     "generate-docs": "jsdoc --configure jsdoc.json --verbose"
+  },
+  "dependencies": {
+    "react-redux": "^8.0.4"
   }
 }

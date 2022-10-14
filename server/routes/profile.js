@@ -13,9 +13,12 @@ const profile = express.Router();
  * @returns {Promise<{error: string}|{user: User}>}
  */
 
-profile.get("/:name", async (req, res) => {
+profile.post("/user", async (req, res) => {
   try {
-    const { name } = req.params;
+    const {name} = req.body;
+    console.log(name);
+
+
     const response = await userProfile.profile({ name });
     if (response.error) {
       return res.status(400).send(response);

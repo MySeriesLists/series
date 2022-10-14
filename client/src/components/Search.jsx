@@ -52,6 +52,34 @@ export default class Search extends React.Component {
     const search = document.getElementById("search").value;
     if (search === "") return;
     this.setState({ isLoading: true });
+    /*
+    useEffect (() => {
+      fetch(`/api/search/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ search }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+
+        console.log(data);
+          this.setState({ searchResults: data });
+          this.setState({ isLoading: false });
+          console.log(data);
+
+        }
+        )
+        .catch((err) => {
+          this.setState({ isLoading: false });
+          this.notify({ message: err.message });
+        }
+        );
+    }, []);
+    console.log(this.state.searchResults);
+  };*/
+
     fetch("/movies/search", {
       method: "POST",
       headers: {
@@ -104,10 +132,9 @@ export default class Search extends React.Component {
                 <MDBModalTitle>
                   <MDBRow>
                     <MDBCol>
-                        <h5>Search</h5>
+                      <h5>Search</h5>
                     </MDBCol>
-                    <MDBCol  className="text-center">
-                      <form>
+                    <MDBCol className="text-center">
                         <input
                           type="search"
                           className="form-control"
@@ -117,7 +144,6 @@ export default class Search extends React.Component {
                           onClick={this.handleSearch}
                           style={{ width: "100%" }}
                         />
-                      </form>
                     </MDBCol>
                   </MDBRow>
                 </MDBModalTitle>
@@ -143,7 +169,7 @@ export default class Search extends React.Component {
                 {/* search results */}
 
                 {this.state.searchResults.map((movie) => (
-                  <MDBRow>
+                  <MDBRow className="h-gap">
                     <MDBCol>
                       <MDBCard
                         key={movie.id}
@@ -180,7 +206,11 @@ export default class Search extends React.Component {
                 ))}
               </MDBModalBody>
               <MDBModalFooter>
-                <MDBBtn color="primary" onClick={this.handleSearch}>
+                <MDBBtn
+                  color="primary"
+                  onClick={this.handleSearch}
+                  type="submit"
+                >
                   Search
                 </MDBBtn>
                 <MDBBtn color="secondary" onClick={this.state.toggleShow}>

@@ -124,6 +124,20 @@ userRouter.post("/logout", (req, res) => {
   res.send("Logout success");
 });
 
+//verify if user is logged in
+userRouter.get("/verify", (req, res) => {
+  try{
+    if(req.session.user){
+      console.log(req.session.user)
+      res.status(200).json({message: "User is logged in", user: req.session.user, status : 200})
+    }else{
+      res.status(401).json({message: "User is not logged in", status : 401})
+    }
+  }catch(err){
+    console.log(err)
+  }
+});
+
 userRouter.get("/confirm", (req, res) => {
   const { code, email } = req.query;
   console.log(code, email);
