@@ -57,22 +57,18 @@ userRouter.post("/signup", (req, res) => {
     username.length < 3 ||
     username.length > 20
   ) {
-    res
-      .status(500)
-      .json({
-        message: "Username must be alphanumeric and has a length of 3-20",
-      });
+    res.status(500).json({
+      message: "Username must be alphanumeric and has a length of 3-20",
+    });
     return;
   } else if (!validator.isEmail(email)) {
     res.status(500).json({ message: "Please enter a valid email" });
     return;
   } else if (passwordStrength(password).id < 2) {
-    res
-      .status(500)
-      .json({
-        message:
-          "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character",
-      });
+    res.status(500).json({
+      message:
+        "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number and one special character",
+    });
     return;
   }
   auth
@@ -126,15 +122,21 @@ userRouter.post("/logout", (req, res) => {
 
 //verify if user is logged in
 userRouter.get("/verify", (req, res) => {
-  try{
-    if(req.session.user){
-      console.log(req.session.user)
-      res.status(200).json({message: "User is logged in", user: req.session.user, status : 200})
-    }else{
-      res.status(401).json({message: "User is not logged in", status : 401})
+  try {
+    if (req.session.user) {
+      console.log(req.session.user);
+      res
+        .status(200)
+        .json({
+          message: "User is logged in",
+          user: req.session.user,
+          status: 200,
+        });
+    } else {
+      res.status(401).json({ message: "User is not logged in", status: 401 });
     }
-  }catch(err){
-    console.log(err)
+  } catch (err) {
+    console.log(err);
   }
 });
 

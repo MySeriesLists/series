@@ -145,7 +145,7 @@ export default class Navbar extends React.Component {
                       </MDBDropdownToggle>
                       <MDBDropdownMenu>
                         <MDBDropdownItem link>
-                          <Link to="/profile">Profile</Link>
+                          <Link to={`/ok`}>Profile</Link>
                         </MDBDropdownItem>
                         <MDBDropdownItem link>
                           <Link to="/settings">Settings</Link>

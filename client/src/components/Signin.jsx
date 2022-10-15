@@ -17,7 +17,6 @@ export default class Signin extends Component {
 
   connectWithGoogle = (e) => {
     e.preventDefault();
-    window.location.href = "/auth/google/login";
     fetch("/auth/google/login", {
       method: "GET",
       headers: {
