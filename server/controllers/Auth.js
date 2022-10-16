@@ -6,22 +6,9 @@ import bcrypt from "bcryptjs";
 dotenv.config({ path: "../.env" });
 import nodeMailer from "nodemailer";
 import { User } from "../models/User.js";
+import { connectToDB } from "../utils/generateToken.js";
 
-mongoose.connect(
-  process.env.MONGODB_URI || "mongodb://localhost:27017/auth",
-  {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  },
-  (err) => {
-    if (err) throw err;
-  }
-);
-// upload all data to mongodb
-mongoose.connection.on("error", (err) => {
-  console.log(err.message);
-});
-
+connectToDB();
 /**
  *
  * @param {*} email
@@ -87,7 +74,7 @@ export default class Auth {
       return { user: user._id };
     } catch (error) {
       console.log(error);
-      return error;
+      return { status: "error", error: error.message };
     }
   }
 
@@ -122,23 +109,8 @@ export default class Auth {
       return { user: user._id };
     } catch (error) {
       console.log(error);
-      return { status: "error" };
+      return { status: "error", error: error.message };
     }
-  }
-
-  /**
-   *
-   * @param {*} data
-   * @description redirect to connected user
-   * @returns user
-   */
-
-  async me(data) {
-    // decode token
-    const token = data.token;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findOne({ _id: decoded._id });
-    return user;
   }
 
   /**
@@ -149,13 +121,18 @@ export default class Auth {
    */
 
   async enableAccount(data) {
-    const user = await user.findOne({ _id: data._id });
-    if (!user) {
-      return { status: "error", error: "User not found" };
+    try {
+      const user = await user.findOne({ _id: data._id });
+      if (!user) {
+        return { status: "error", error: "User not found" };
+      }
+      user.isDisabled = false;
+      await user.save();
+      return user;
+    } catch (error) {
+      console.log(error);
+      return { status: "error", error: error.message };
     }
-    user.isDisabled = false;
-    await user.save();
-    return user;
   }
 
   /**
@@ -171,25 +148,25 @@ export default class Auth {
    */
 
   async resetPassword(data) {
-    const user = await User.findOne({ email: data });
-    if (!user) {
-      return { status: "error", error: "User not found" };
-    }
-    //create one time password
-    const code =
-      Math.random().toString(36).substring(5, 15) +
-      Math.random().toString(36).substring(2, 15);
-    //create a jwt token
-    const token = jwt.sign({ code }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    try {
+      const user = await User.findOne({ email: data });
+      if (!user) {
+        return { status: "error", error: "User not found" };
+      }
+      //create one time password
+      const code =
+        Math.random().toString(36).substring(5, 15) +
+        Math.random().toString(36).substring(2, 15);
 
-    user.code = code;
-    await user.save();
-    const route = "change-password";
-    // send email
-    sendEmail(route, user.email, token);
-    return { status: "success" };
+      user.code = code;
+      await user.save();
+      const route = "change-password";
+      // send email
+      sendEmail(route, user.email, user.code);
+      return { status: "success", message: "Email sent" };
+    } catch (error) {
+      return { status: "error", error: error.message };
+    }
   }
 
   /**
@@ -200,60 +177,71 @@ export default class Auth {
    * @returns <success>
    */
   async changePassword(data) {
-    console.log(data);
-    if (!data.code || !data.email) {
-      return { status: "error", error: "Invalid data" };
+    try {
+      if (!data.code || !data.email) {
+        return { status: "error", error: "Invalid data" };
+      }
+      const user = await User.findOne({ email: data.email });
+      if (!user) {
+        return { status: "error", error: "User not found" };
+      }
+      if (user.code !== data.code) {
+        return { status: "error", error: "Invalid code" };
+      }
+
+      // generate new password
+      const password = Math.random().toString(36).substring(8, 15) + Math.random() * 100000;
+
+      user.password = password;
+
+
+      user.code = null;
+      await user.save();
+      return {
+        status: "success",
+        message: "Password changed, for security reasons, please change password",
+        password: password,
+      };
+    } catch (error) {
+      console.log(error);
+      return { status: "error", error: error.message };
     }
-    const user = await User.findOne({ email: data.email });
-    if (!user) {
-      return { status: "error", error: "User not found" };
-    }
-    // verify token
-    const decoded = jwt.verify(data.code, process.env.JWT_SECRET);
-    if (decoded.code !== user.code) {
-      return { status: "error", error: "Invalid token" };
-    }
-    // crypt password
-    const hash = await bcrypt.hash(decoded.code, 10);
-    user.password = hash;
-    user.code = null;
-    await user.save();
-    return {
-      status: "success",
-      message: "Password changed",
-      password: decoded.code,
-    };
   }
 
   async confirm(data) {
-    const code = data.code;
-    const email = data.email;
-    console.log(code);
-    console.log(email);
+    try {
+      const code = data.code;
+      const email = data.email;
+      console.log(code);
+      console.log(email);
 
-    const user = await User.findOne({ email: email });
-    if (!user) {
-      return { status: "error", error: "Invalid email" };
-    }
-    if (user.isVerified)
-      return {
-        status: "success",
-        message: "Your account has been verified. Please log in.",
-      };
-    if (user) {
-      if (user.code === code) {
-        // update isVerified to true
-        user.isVerified = true;
-        // remove code
-        user.code = undefined;
-        await user.save();
-        return { status: "success" };
-      } else {
-        console.log("code is not correct", code);
-        return { status: "error" };
+      const user = await User.findOne({ email: email });
+      if (!user) {
+        return { status: "error", error: "Invalid email" };
       }
-    } else {
-      return { status: "error" };
+      if (user.isVerified)
+        return {
+          status: "success",
+          message: "Your account has been verified. Please log in.",
+        };
+      if (user) {
+        if (user.code === code) {
+          // update isVerified to true
+          user.isVerified = true;
+          // remove code
+          user.code = undefined;
+          await user.save();
+          return { status: "success" };
+        } else {
+          console.log("code is not correct", code);
+          return { status: "error", error: "Invalid code" };
+        }
+      } else {
+        return { status: "error", error: "Invalid email" };
+      }
+    } catch (error) {
+      console.log(error);
+      return { status: "error", error: error.message };
     }
   }
 
@@ -268,14 +256,19 @@ export default class Auth {
    */
 
   async disableAccount(data) {
-    const user = await User.findOne({ _id: data._id });
-    if (!user) {
-      return { status: "error", error: "Invalid user" };
+    try {
+      const user = await User.findOne({ _id: data._id });
+      if (!user) {
+        return { status: "error", error: "Invalid user" };
+      }
+      user.isDisabled = true;
+      user.tokens = [];
+      await user.save();
+      return { status: "success", message: "Account disabled" };
+    } catch (error) {
+      console.log(error);
+      return { status: "error", error: error.message };
     }
-    user.isDisabled = true;
-    user.tokens = [];
-    await user.save();
-    return { status: "success" };
   }
 
   /**
@@ -348,10 +341,15 @@ export default class Auth {
         newUser.isVerified = true;
         await newUser.save();
 
-        return { user: newUser._id };
+        return {
+          user: newUser._id,
+          status: "success",
+          message: "User created",
+        };
       }
     } catch (error) {
       console.log(error);
+      return { status: "error", error: error.message };
     }
   }
 }

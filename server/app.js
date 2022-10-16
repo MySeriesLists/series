@@ -11,7 +11,7 @@ dotenv.config({ path: "../.env" });
 const app = express();
 
 // use route of Auth
-import userRouter from "./routes/user.js";
+import authRouter from "./routes/auth.js";
 import profile from "./routes/profile.js";
 import movies from "./routes/movies.js";
 import commentRouter from "./routes/comments.js";
@@ -48,7 +48,7 @@ app.use(
 );
 
 // use route of Auth
-app.use("/auth", userRouter);
+app.use("/auth", authRouter);
 app.use("/profile", profile);
 app.use("/movies", movies);
 app.use('/comments', commentRouter);

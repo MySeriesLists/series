@@ -1,46 +1,51 @@
 import express from "express";
 import validator from "validator";
 import { passwordStrength } from "check-password-strength";
-import generateAuthToken from "../utils/generateToken.js";
+import { generateAuthToken, connectToDB } from "../utils/generateToken.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 
 // import controllers
 import Auth from "../controllers/Auth.js";
 
-const userRouter = express.Router();
+//router
+const authRouter = express.Router();
 
 // create new instance of Auth
 const auth = new Auth();
 
-userRouter.get("/", (req, res) => {
+authRouter.get("/", (req, res) => {
   res.send("Hello World!");
 });
 
-userRouter.get("/google/login", (req, res) => {
+authRouter.get("/google/login", (req, res) => {
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.GOOGLE_CLIENT_ID}&redirect_uri=${process.env.GOOGLE_REDIRECT_URI}&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile`;
   res.json({ url });
 });
 
-userRouter.get("/google/callback", (req, res) => {
+authRouter.get("/google/callback", (req, res) => {
+  try {
   const code = req.query.code;
   if (code) {
     auth
       .googleAuth(code)
       .then((response) => {
         if (response.error) {
-          res.status(400).send(response.error);
+          res.status(500).json({ error: response.error, status: "error" });
         }
         return generateAuthToken(req, res, response.user);
       })
       .catch((err) => {
         console.log(err);
-        res.status(400).send(err);
       });
+  }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: error.message, status: "error" });
   }
 });
 
-userRouter.post("/signup", (req, res) => {
+authRouter.post("/signup", (req, res) => {
   const { username, password, email } = req.body;
   // generate a rndom token
   const code = Math.floor(Math.random() * 16777215).toString(16);
@@ -74,7 +79,7 @@ userRouter.post("/signup", (req, res) => {
   auth
     .signup({ username, password, email, code })
     .then((response) => {
-      // handle 11000 error
+      // handle 11000 error, duplicate key error from db
       if (response.code === 11000) {
         response.keyPattern.username
           ? res.status(500).json({ message: "Username already exists" })
@@ -85,11 +90,11 @@ userRouter.post("/signup", (req, res) => {
     })
     .catch((error) => {
       console.log(error);
-      res.status(400).send(error);
+      res.status(500).json({ error: error.message, status: "error" });
     });
 });
 
-userRouter.post("/login", (req, res) => {
+authRouter.post("/login", (req, res) => {
   const { credential, password } = req.body;
   console.log(credential, password);
   if (!credential || !password) {
@@ -110,10 +115,10 @@ userRouter.post("/login", (req, res) => {
     })
     .catch((error) => {
       console.log(error);
-      res.status(400).json({ message: "Invalid username or password" });
+      res.status(500).json({ error: error.message, status: "error" });
     });
 });
-userRouter.post("/logout", (req, res) => {
+authRouter.post("/logout", (req, res) => {
   // remove token from cookie
   res.clearCookie("token");
   res.clearCookie("refreshToken");
@@ -121,26 +126,25 @@ userRouter.post("/logout", (req, res) => {
 });
 
 //verify if user is logged in
-userRouter.get("/verify", (req, res) => {
+authRouter.get("/verify", (req, res) => {
   try {
     if (req.session.user) {
       console.log(req.session.user);
-      res
-        .status(200)
-        .json({
-          message: "User is logged in",
-          user: req.session.user,
-          status: 200,
-        });
+      res.status(200).json({
+        message: "User is logged in",
+        user: req.session.user,
+        status: 200,
+      });
     } else {
       res.status(401).json({ message: "User is not logged in", status: 401 });
     }
   } catch (err) {
     console.log(err);
+    res.status(500).json({ error: err.message, status: "error" });
   }
 });
 
-userRouter.get("/confirm", (req, res) => {
+authRouter.get("/confirm", (req, res) => {
   const { code, email } = req.query;
   console.log(code, email);
 
@@ -155,7 +159,7 @@ userRouter.get("/confirm", (req, res) => {
     });
 });
 
-userRouter.get("/change-password", (req, res) => {
+authRouter.get("/change-password", (req, res) => {
   const { code, email } = req.query;
   console.log(code, email);
   //verify token expiration
@@ -171,11 +175,11 @@ userRouter.get("/change-password", (req, res) => {
     })
     .catch((error) => {
       console.log("An error occured :", error);
-      res.status(400).send(error);
+      return res.status(400).json({ error: error.message, status: "error" });
     });
 });
 
-userRouter.get("/refresh-token", (req, res) => {
+authRouter.get("/refresh-token", (req, res) => {
   const refreshToken = req.cookies["refresh-token"];
   if (!refreshToken) {
     return res.status(401).send("Access denied");
@@ -195,11 +199,11 @@ userRouter.get("/refresh-token", (req, res) => {
     })
     .catch((error) => {
       console.log(error);
-      res.status(400).send(error);
+      res.status(500).json({ error: error.message, status: "error" });
     });
 });
 
-userRouter.get("/disable-account", (req, res) => {
+authRouter.get("/disable-account", (req, res) => {
   const authToken = req.cookies["auth-token"];
   if (!authToken) {
     return res.status(401).send("Access denied");
@@ -217,36 +221,51 @@ userRouter.get("/disable-account", (req, res) => {
     });
 });
 
-userRouter.get("/me", (req, res) => {
-  const authToken = req.cookies["auth-token"];
-  if (!authToken) {
-    return res.status(401).send("Access denied");
+
+
+authRouter.get("/reset-password", (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(500).json({ message: "Please enter your email" });
+    }
+    auth
+      .resetPassword(email)
+      .then((response) => {
+        res.send(response);
+      })
+      .catch((error) => {
+        console.log(error);
+        return res.status(400).json({ error: error.message, status: "error" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.message, status: "error" });
   }
-  auth
-    .me(authToken)
-    .then((response) => {
-      res.send(response);
-    })
-    .catch((error) => {
-      console.log(error);
-      res.status(400).send(error);
-    });
 });
 
-userRouter.get("/reset-password", (req, res) => {
-  const { email } = req.query;
-  if (!email) {
-    return res.status(500).json({ message: "Please enter your email" });
-  }
-  auth
-    .resetPassword(email)
-    .then((response) => {
-      res.send(response);
+authRouter.get('/change-password', (req, res) => {
+  try{
+    const {code, email} = req.query;
+    if(!code || !email){
+      return res.status(500).json({message: 'Please enter a valid code and email'})
+    }
+    auth.changePassword({code, email})
+    .then(response => {
+      res.send(response)
     })
-    .catch((error) => {
-      console.log(error);
-      res.status(400).send(error);
-    });
+    .catch(error => {
+      console.log('An error occured :', error)
+      return res.status(400).json({error: error.message, status: 'error'})
+    })
+  }
+  catch(err){
+    console.log(err)
+    res.status(500).json({error: err.message, status: 'error'})
+  }
 });
 
-export default userRouter;
+
+
+
+export default authRouter;

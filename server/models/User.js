@@ -40,10 +40,52 @@ const userSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+  isAdmin: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  
   createdAt: {
     type: Date,
     required: true,
     default: Date.now,
+  },
+  awards: {
+    type: Array,
+    required: false,
+  },
+  lastActive: {
+    type: Date,
+    required: false,
+    default: Date.now,
+  },
+  isAdmin: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  isSuperAdmin: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  isPrivate: {
+    type: Boolean,
+    required: true,
+    default: false,
+  },
+  friends: {
+    type: Array,
+    required: false,
+  },
+  pendingFriendRequests: {
+    type: Array,
+    required: false,
+  },
+  sendFriendRequests: {
+    type: Array,
+    required : false,
   },
   favorites: {
     type: [Object],
@@ -63,14 +105,6 @@ const userSchema = new mongoose.Schema({
     required: false,
   },
   watching: {
-    type: [Object],
-    required: false,
-  },
-  following: {
-    type: [Object],
-    required: false,
-  },
-  followers: {
     type: [Object],
     required: false,
   },

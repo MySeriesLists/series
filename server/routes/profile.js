@@ -7,24 +7,40 @@ const userProfile = new Profile();
 
 const profile = express.Router();
 
+profile.use((req, res, next) => {
+  console.log("profile route");
+  // if user is not logged in or user try to access other user profile page
+  if (!req.session.user) {
+    if (!req.url.includes("get-user-profile")) {
+      return res.json({ error: "You are not logged in" });
+    }
+  }
+
+  next();
+});
+
 /**
  * @param {string} name
  * @description Get user profile
  * @returns {Promise<{error: string}|{user: User}>}
  */
 
-profile.post("/user", async (req, res) => {
+//to keep
+profile.post("/get-user-profile", async (req, res) => {
   try {
-    const {name} = req.body;
-    console.log(name);
+    const { name } = req.body;
+    let user_id = "";
+    req.session.user ? (user_id = req.session.user) : (user_id = null);
+    console.log("user_id", user_id);
+    const data = { name, user_id };
 
-
-    const response = await userProfile.profile({ name });
+    const response = await userProfile.profile(data);
     if (response.error) {
       return res.status(400).send(response);
     }
     return res.status(200).send(response);
   } catch (error) {
+    console.log(error);
     return res.status(400).send(error.message);
   }
 });
@@ -32,7 +48,7 @@ profile.post("/user", async (req, res) => {
 /**
  * @param {string} name
  * @param {string} code, category (watching, completed, favorites, watchList)
- * @param {int} next, next page 
+ * @param {int} next, next page
  * @description get list of movies, depending on the code
  * if code === "favorites" return favorites
  * if code === "completed" return completed
@@ -58,28 +74,19 @@ profile.post("/movies-list", async (req, res) => {
   }
 });
 
-/**
- * @route /profile/:name
- * @param {string} name
- * @description add follower
- * @returns {Promise<{error: string}|{user: User}>}
- *  
- */
-
-profile.get("/add-follower/:name", async (req, res) => {
+profile.get("/add-friend", async (req, res) => {
   try {
-    if (!req.session.user) {
+    const { friendName } = req.query;
+    const user_id = req.session.user;
+
+    const data = { user_id, friendName };
+    console.log("data", data);
+    if (!friendName) {
       return res
         .status(400)
-        .send({ error: "You must be logged in to follow a user" });
+        .send({ error: "Invalid username", status: "error" });
     }
-    const { name } = req.params;
-    if (!name) return res.status(400).send({ error: "Invalid username" });
-    //verify if user exists and if user is not the same as the logged in user
-    const response = await userProfile.addFollower({
-      name,
-      userId: req.session.user,
-    });
+    const response = await userProfile.addFriend(data);
     if (response.error) {
       return res.status(400).send(response);
     }
@@ -89,20 +96,18 @@ profile.get("/add-follower/:name", async (req, res) => {
   }
 });
 
-profile.get("/remove-follower/:name", async (req, res) => {
+//remove friend
+profile.get("/remove-friend", async (req, res) => {
   try {
-    if (!req.session.user) {
+    const { friendName } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, friendName };
+    if (!friendName) {
       return res
         .status(400)
-        .send({ error: "You must be logged in to follow a user" });
+        .send({ error: "Invalid username", status: "error" });
     }
-    const { name } = req.params;
-    if (!name) return res.status(400).send({ error: "Invalid username" });
-    //verify if user exists and if user is not the same as the logged in user
-    const response = await userProfile.removeFollower({
-      name,
-      userId: req.session.user,
-    });
+    const response = await userProfile.removeFriend(data);
     if (response.error) {
       return res.status(400).send(response);
     }
@@ -112,22 +117,134 @@ profile.get("/remove-follower/:name", async (req, res) => {
   }
 });
 
-profile.get("/followers/:name", async (req, res) => {
+// get pending friend requests
+profile.get("/pending-friends", async (req, res) => {
   try {
-    const { name } = req.params;
-    if (!name) return res.status(400).send({ error: "Invalid username" });
-    const response = await userProfile.followers(name);
+    const user_id = req.session.user;
+    const data = { user_id };
+    const response = await userProfile.getFriendRequests(data);
     if (response.error) {
       return res.status(400).send(response);
     }
-    var followers = await response.followers;
-    var following = await response.followings;
-    console.log("following", following);
-
-    
-    return res.status(200).send({ followers, following });
+    return res.status(200).send(response);
   } catch (error) {
-    console.log("error", error);
+    return res.status(400).send(error.message);
+  }
+});
+
+// list of friends
+profile.get("/friends", async (req, res) => {
+  try {
+    const name = req.query.name;
+    const response = await userProfile.getFriends({ name });
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+// accept friend request
+profile.get("/accept-friend", async (req, res) => {
+  try {
+    const { friendName } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, friendName };
+    if (!friendName) {
+      return res
+        .status(400)
+        .send({ error: "Invalid username", status: "error" });
+    }
+    const response = await userProfile.acceptFriendRequest(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+// reject friend request
+profile.get("/reject-friend", async (req, res) => {
+  try {
+    const { friendName } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, friendName };
+    if (!friendName) {
+      return res
+        .status(400)
+        .send({ error: "Invalid username", status: "error" });
+    }
+    const response = await userProfile.rejectFriendRequest(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+// update user name
+profile.get("/update-user-name", async (req, res) => {
+  try {
+    const { name } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, name };
+    if (!name) {
+      return res
+        .status(400)
+        .send({ error: "Invalid username", status: "error" });
+    }
+    const response = await userProfile.updateUserName(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+//update user password
+profile.get("/update-user-password", async (req, res) => {
+  try {
+    const { password } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, password };
+    if (!password) {
+      return res
+        .status(400)
+        .send({ error: "Invalid password", status: "error" });
+    }
+    const response = await userProfile.updateUserPassword(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+// update user bio
+profile.get("/update-user-bio", async (req, res) => {
+  try {
+    const { bio } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, bio };
+    if (!bio) {
+      return res.status(400).send({ error: "Invalid bio", status: "error" });
+    }
+    const response = await userProfile.updateUserBio(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
     return res.status(400).send(error.message);
   }
 });

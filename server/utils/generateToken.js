@@ -4,7 +4,7 @@ import session from "express-session";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 
-async function connectToDB() {
+const connectToDB = async () => {
   try {
     mongoose.connect(
       process.env.MONGODB_URI || "mongodb://localhost:27017/auth",
@@ -18,16 +18,10 @@ async function connectToDB() {
   }
 }
 
-async function handleDBError() {
-  mongoose.connection.on("error", (err) => {
-    console.log(err.message);
-  });
-}
 
 // verify if alreday connected to db
 if (!mongoose.connection.readyState) {
   connectToDB();
-  handleDBError();
 }
 const generateAuthToken = async (req, res, userId) => {
   if (!mongoose.Types.ObjectId.isValid(userId)) {
@@ -52,4 +46,4 @@ const generateAuthToken = async (req, res, userId) => {
   });
 };
 
-export default generateAuthToken;
+export  {generateAuthToken, connectToDB};
