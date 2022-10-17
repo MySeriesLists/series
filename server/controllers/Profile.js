@@ -41,7 +41,6 @@ export default class Profile {
         return { error: "User not found", status: 404 };
       }
 
-
       // check if account is private, if private don't show profile except for user and friends
       if (user.isPrivate) {
         // check if user is logged in
@@ -545,12 +544,12 @@ export default class Profile {
       if (!user) {
         return { error: "User not found", status: 404 };
       }
-      if (bio.length > 37 && bio.length < 1000) {
+      if (bio.length >= 0 && bio.length <= 250) {
         await User.findOneAndUpdate({ _id: user_id }, { bio }, { new: true });
         return { message: "Bio updated", status: "success" };
       } else {
         return {
-          error: "Bio must be between 37 and 1000 characters",
+          error: "Bio must be between 0 and 250 characters",
           status: 400,
         };
       }
@@ -559,4 +558,56 @@ export default class Profile {
       return { error: error.message };
     }
   }
+
+  // add personal website
+  async addPersonalWebsite(data) {
+    try {
+      const { user_id, personalWebsite } = data;
+      console.log(personalWebsite);
+
+      const user = await User.findOne({ _id: user_id });
+      if (!user) {
+        return { error: "User not found", status: 404 };
+      }
+
+      await User.findOneAndUpdate(
+        { _id: user_id },
+        { personalWebsite },
+      );
+      return { message: "Personal website added", status: "success" };
+    } catch (error) {
+      console.log(error);
+      return { error: error.message };
+    }
+  }
+
+  // add social media
+  async addSocialMediaLink(data) {
+    try {
+      const { user_id, link, mediaTypes } = data;
+      const user = await User.findOne({ _id: user_id });
+      if (!user) {
+        return { error: "User not found", status: 404 };
+      }
+      const socialMedia = {
+        link,
+        mediaTypes,
+      };
+      // verify if mediaTypes is in the array socialMedia.mediaTypes
+      if(!user.socialMedia.some((item) => item.mediaTypes === mediaTypes)) {
+        await User.findOneAndUpdate(
+          { _id: user_id },
+          { $push: { socialMedia } },
+          { new: true }
+        );
+        return { message: "Social media link added", status: "success" };
+      } else {
+        return { error: "Can not add link...", status: 404 };
+      }
+    } catch (error) {
+      console.log(error);
+      return { error: error.message };
+    }
+  }
+
 }

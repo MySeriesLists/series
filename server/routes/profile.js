@@ -249,4 +249,60 @@ profile.get("/update-user-bio", async (req, res) => {
   }
 });
 
+// add personal website
+profile.get("/add-personal-website", async (req, res) => {
+  try {
+    const { personalWebsite } = req.query;
+    const user_id = req.session.user;
+    const data = { user_id, personalWebsite };
+    if (!personalWebsite) {
+      return res
+        .status(400)
+        .send({ error: "Invalid website", status: "error" });
+    }
+    const response = await userProfile.addPersonalWebsite(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    return res.status(400).send(error.message);
+  }
+});
+
+// add social media link
+profile.get("/add-social-media-link", async (req, res) => {
+  try {
+    const { link, mediaTypes } = req.query;
+    let socialMediaTypes = [
+      "facebook",
+      "twitter",
+      "instagram",
+      "linkedin",
+      "github",
+      "youtube",
+      "twitch",
+      "reddit",
+      "snapchat",
+      "tiktok",
+    ];
+
+    if (!socialMediaTypes.includes(mediaTypes) || !link) {
+      return res
+        .status(400)
+        .send({ error: "Invalid link or media type", status: "error" });
+    }
+    const user_id = req.session.user;
+    const data = { user_id, link, mediaTypes };
+    const response = await userProfile.addSocialMediaLink(data);
+    if (response.error) {
+      return res.status(400).send(response);
+    }
+    return res.status(200).send(response);
+  } catch (error) {
+    console.log(error);
+    return res.status(400).send(error.message);
+  }
+});
+
 export default profile;

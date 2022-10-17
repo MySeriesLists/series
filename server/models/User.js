@@ -87,6 +87,14 @@ const userSchema = new mongoose.Schema({
     type: Array,
     required : false,
   },
+  personalWebsite: {
+    type: String,
+    required: false,
+  },
+  socialMedia: {
+    type: Array,
+    required: false,
+  },
   favorites: {
     type: [Object],
     required: false,

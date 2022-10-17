@@ -1,7 +1,7 @@
 import express from "express";
 import validator from "validator";
 import { passwordStrength } from "check-password-strength";
-import { generateAuthToken, connectToDB } from "../utils/generateToken.js";
+import { generateAuthToken } from "../utils/generateToken.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 
@@ -80,13 +80,12 @@ authRouter.post("/signup", (req, res) => {
     .signup({ username, password, email, code })
     .then((response) => {
       // handle 11000 error, duplicate key error from db
-      if (response.code === 11000) {
-        response.keyPattern.username
-          ? res.status(500).json({ message: "Username already exists" })
-          : res.status(500).json({ message: "Email already exists" });
+      if (response.error) {
+        return res.status(500).json({ error: response.error, status: "error" });
         return;
       }
-      return generateAuthToken(req, res, response.user);
+      console.log(response);
+      return res.status(200).json({ message: "User created successfully" });
     })
     .catch((error) => {
       console.log(error);
