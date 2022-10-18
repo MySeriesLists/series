@@ -10,13 +10,14 @@ import { Server } from "socket.io";
 dotenv.config({ path: "../.env" });
 const app = express();
 
-// use route of Auth
+// use route 
 import authRouter from "./routes/auth.js";
 import profile from "./routes/profile.js";
 import movies from "./routes/movies.js";
 import commentRouter from "./routes/comments.js";
 import messageRouter from "./routes/messages.js";
 import reviewRouter from "./routes/review.js";
+import clubRouter from "./routes/club.js";
 
 // use middleware
 app.use(express.json());
@@ -55,6 +56,7 @@ app.use("/movies", movies);
 app.use('/comments', commentRouter);
 app.use('/messages', messageRouter);
 app.use('/review', reviewRouter);
+app.use('/club', clubRouter);
 
 app.get("/", (req, res) => {
   if (req.session.user) {

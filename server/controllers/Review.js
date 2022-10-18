@@ -2,7 +2,7 @@ import axios from "axios";
 import Review from "../models/Review.js";
 import Movie from "../models/Movie.js";
 import { User } from "../models/User.js";
-import { ObjectId } from "mongoose";
+import ReviewComment from "../controllers/ReviewComment.js";
 
 export default class ReviewController {
   constructor() {
@@ -60,19 +60,13 @@ export default class ReviewController {
           status: 404,
         };
       }
-      review.comments.push({
+      // insert comment in reviewComment collection
+      const response = await ReviewComment.create({
         userId: user_id,
+        reviewId: review_id,
         comment,
       });
-      //update the review in the database
-      await Review.updateOne({ _id: review_id }, { comments: review.comments });
-      return { comments: review.comments, status: 200 };
-
-      /*
-      //add the comment to the review
-      review.comments.push({ user_id, comment });
-      await Review.updateOne({ _id: review_id }, { comments: review.comments });
-      return { comments: review.comments, status: 200 };*/
+      return { response, status: 200 };
     } catch (error) {
       console.log(error);
       return error.message;
@@ -120,22 +114,25 @@ export default class ReviewController {
       !offset ? (offset = 0) : offset;
       !limit ? (limit = 10) : limit;
 
-      let comments = await Review.findOne({ _id: review_id })
-        .select("comments")
+      let comments = await ReviewComment.find({ reviewId: review_id })
         .skip(offset)
-        .limit(limit);
-      let commentsCount = comments.comments.length;
+        .limit(limit)
+      let commentsCount = comments.length;
       let commentsWithUser = await Promise.all(
-        comments.comments.map(async (comment) => {
+        
+        comments.map(async (comment) => {
           let user = await User.findOne({ _id: comment.userId }).select(
             "username _id iamge"
           );
-          return { ...comments._doc, user };
+          comment.upvotes = comment.upvotes.flat().length;
+          comment.downvotes = comment.downvotes.flat().length;
+          // sort comments by upvotes
+          return { ...comment._doc, user };
         })
       );
       let nextPage = commentsCount > limit ? limit + 10 : null;
       return {
-        comments: commentsWithUser,
+        comments:commentsWithUser.sort((a, b) => b.upvotes - a.upvotes), // sort comments by upvotes
         nextPage: nextPage,
         commentsCount,
         status: 200,
@@ -184,21 +181,12 @@ export default class ReviewController {
         return { upvotes: review.upvotes, status: 200 };
       }
       if (comment_id) {
-        let review = await Review.findOne({ "comments._id": comment_id });
-        if (!review) {
-          return { error: "Comment not found", status: 404 };
-        }
         //get the comment
-        let comment = review.comments.find(
-          (comment) => comment._id == comment_id
-        );
+        let comment = await ReviewComment.findOne({ _id: comment_id });
         //check if the user has already upvoted the comment
         let upvoted = comment.upvotes.find((upvote) => upvote == user_id);
         if (upvoted) {
-          return {
-            error: "You have already upvoted this comment",
-            status: 400,
-          };
+          return { error: "You have already upvoted this comment", status: 400 };
         }
         //check if the user has already downvoted the comment
         let downvoted = comment.downvotes.find(
@@ -212,8 +200,8 @@ export default class ReviewController {
         }
         //add the upvote
         comment.upvotes.push(user_id);
-        //update the review in the database
-        await Review.updateOne({ "comments._id": comment_id }, review);
+        console.log("comment", comment);
+        await comment.save();
         return { upvotes: comment.upvotes, status: 200 };
       }
     } catch (error) {
@@ -234,7 +222,7 @@ export default class ReviewController {
         return { error: "User not found", status: 404 };
       }
       if (review_id) {
-        let review = await Review.findOne({ _id: review_id });
+        let review = await ReviewComment.findOne({ _id: review_id });
         if (!review) {
           return { error: "Review not found", status: 404 };
         }
@@ -261,14 +249,8 @@ export default class ReviewController {
         return { downvotes: review.downvotes, status: 200 };
       }
       if (comment_id) {
-        let review = await Review.findOne({ "comments._id": comment_id });
-        if (!review) {
-          return { error: "Comment not found", status: 404 };
-        }
         //get the comment
-        let comment = review.comments.find(
-          (comment) => comment._id == comment_id
-        );
+        let comment = await ReviewComment.findOne({ _id: comment_id });
         //check if the user has already downvoted the comment
         let downvoted = comment.downvotes.find(
           (downvote) => downvote == user_id
@@ -290,7 +272,7 @@ export default class ReviewController {
         //add the downvote
         comment.downvotes.push(user_id);
         //update the review in the database
-        await Review.updateOne({ "comments._id": comment_id }, review);
+        await comment.save();
         return { downvotes: comment.downvotes, status: 200 };
       }
     } catch (error) {

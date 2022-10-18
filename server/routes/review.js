@@ -1,5 +1,4 @@
 import express from "express";
-import validator from "validator";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 const reviewRouter = express.Router();

@@ -74,3 +74,39 @@ const deleteNotVerifiedUsers = new CronJob("0 0 * * *", async () => {
 });
 
 deleteNotVerifiedUsers.start();
+
+// delete all disabled club
+// execute once a month
+const deleteDisabledClubs = new CronJob("0 0 * * *", async () => {
+  try {
+    const { club_id, user_id } = data;
+    if (!club_id || !user_id) {
+      return {
+        status: 400,
+        message: "Bad request, club_id and user_id are mandatory.",
+      };
+    }
+    const club = await Club.findOne({ _id: club_id });
+    if (!club) {
+      return { status: 404, message: "Club not found" };
+    }
+    // check if user is admin
+    if (!club.admins.includes(user_id)) {
+      return { status: 400, message: "You are not allowed to do this." };
+    }
+    // delete club
+    await Club.deleteOne({ _id: club_id });
+    // delete all events
+    await ClubEvent.deleteMany({ club_id });
+    // delete all discussions
+    await ClubDiscussion.deleteMany({ club_id });
+    // delete all comments
+    await ClubComment.deleteMany({ club_id });
+    return { status: 200, message: "Club deleted successfully" };
+  } catch (error) {
+    console.log(error);
+    return error;
+  }
+});
+
+deleteDisabledClubs.start();
