@@ -1,10 +1,10 @@
-import { UsersProfileComments, MoviesComments } from "../models/Comment.js";
+import Comment from "../models/Comment.js";
 import { User } from "../models/User.js";
 import Movie from "../models/Movie.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });
 
-export default class Comment {
+export default class CommentController {
   /**
    * @param {string} userId
    * @param {string} imdbId
@@ -25,22 +25,37 @@ export default class Comment {
    * console.log("error", error);
    * });
    */
-  async postCommentMovies({ userId, imdbId, comment }) {
+  async postCommentMovies({ userId, imdbId, comment, codeComment }) {
     try {
       const user = await User.findById(userId);
       const movie = await Movie.findOne({ imdbId: imdbId });
-      if (!user || !movie) {
+      // all types of comments, profiles, movies, clubs, discussionsClub etc..
+      const codeComments = [
+        "profile",
+        "movie",
+        "clubDiscussion",
+        "clubEvent",
+        "review",
+        "blog",
+      ]
+      // check if the comment type is valid
+      if (!codeComments.includes(codeComment)) {
+        return { error: "Invalid comment type" };
+      }
+      if (!user || !movie || !codeComment) {
         return { error: "User or movie not found", status: 404 };
       }
 
-      const newComment = new MoviesComments({
+      const newComment = new Comment({
         userId,
         imdbId,
         comment,
+        codeComment: codeComment,
       });
       await newComment.save();
       return { comment: newComment };
     } catch (error) {
+      console.log("error", error);
       return { error: error.message };
     }
   }

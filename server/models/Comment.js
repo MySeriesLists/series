@@ -1,30 +1,8 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
-
-const UsersProfileComments = mongoose.model(
-  "UsersProfileComments",
-  new Schema({    
-    userId: {
-      type: String,
-      required: true,
-    },
-    commenterUserId: {
-        type : String,
-        required: true,
-    },
-    comment: {
-      type: String,
-      required: true,
-    },
-    date: {
-      type: Date,
-      default: Date.now,
-    },
-  })
-);
-const MoviesComments = mongoose.model(
-  "MoviesComments",
+const Comments = mongoose.model(
+  "Comments",
   new Schema({
     imdbId: {
       type: String,
@@ -38,9 +16,9 @@ const MoviesComments = mongoose.model(
       type: String,
       required: true,
     },
-    date: {
-      type: Date,
-      default: Date.now,
+    codeComment: {
+      type: String,
+      required: true,
     },
     upvotes: {
         type: [String],
@@ -48,8 +26,21 @@ const MoviesComments = mongoose.model(
     downvotes: {
         type: [String],
     },
+    replies: {
+        type: [Object],
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+      required: true,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+      required: true,
+    },
 
   })
 );
 
-export { UsersProfileComments, MoviesComments };
+export default Comments;

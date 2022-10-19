@@ -11,6 +11,8 @@ const club = new ClubController();
 
 clubRouter.use(async (req, res, next) => {
   if (req.session.user) {
+    console.log("clubRouter.use");
+    console.log(req.session.user);
     return next();
   } else {
     return res.status(401).json({ message: "Unauthorized" });

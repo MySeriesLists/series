@@ -52,8 +52,8 @@ commentRouter.get("/", (req, res) => {
 
 commentRouter.post("/post-comment-movies", async (req, res) => {
   try {
-    const { comment, imdbId } = req.body;
-    if (!comment || !imdbId) {
+    const { comment, imdbId, codeComment } = req.body;
+    if (!comment || !imdbId || !codeComment) {
       return res.status(400).send({ error: "No data provided!" });
     }
 
@@ -61,6 +61,7 @@ commentRouter.post("/post-comment-movies", async (req, res) => {
       userId: req.session.user,
       comment,
       imdbId,
+      codeComment,
     });
     if (response.error) {
       return res.status(400).send(response);

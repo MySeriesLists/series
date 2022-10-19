@@ -18,6 +18,7 @@ import commentRouter from "./routes/comments.js";
 import messageRouter from "./routes/messages.js";
 import reviewRouter from "./routes/review.js";
 import clubRouter from "./routes/club.js";
+import blogRouter from "./routes/blog.js";
 
 // use middleware
 app.use(express.json());
@@ -57,6 +58,7 @@ app.use('/comments', commentRouter);
 app.use('/messages', messageRouter);
 app.use('/review', reviewRouter);
 app.use('/club', clubRouter);
+app.use('/blog', blogRouter);
 
 app.get("/", (req, res) => {
   if (req.session.user) {
