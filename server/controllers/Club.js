@@ -1,7 +1,6 @@
 import Club from "../models/Club/Club.js";
 import ClubEvent from "../models/Club/Event.js";
 import ClubDiscussion from "../models/Club/Discussion.js";
-import ClubComment from "../models/Club/Comment.js";
 import { User } from "../models/User.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "../.env" });

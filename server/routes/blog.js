@@ -105,8 +105,8 @@ blogRouter.delete('/delete-blog', async (req, res) => {
 //get all comments for blog
 blogRouter.get('/get-blog-comments', async (req, res) => {
     try {
-        const { blogId } = req.query;
-        const response = await commentController.getComments({ blogId });
+        const {idOfCommentedItem, type, offset, limit} = req.query;
+        const response = await commentController.getComments({idOfCommentedItem, type, offset, limit});
         if(response.error) {
             return res.status(400).json({message: response.error});
         }
@@ -120,8 +120,10 @@ blogRouter.get('/get-blog-comments', async (req, res) => {
 //create comment for blog
 blogRouter.post('/create-blog-comment', async (req, res) => {
     try {
-        const { blogId, userId, content } = req.body;
-        const response = await commentController.createComment({ blogId, userId, content });
+        const {_id ,  content, type } = req.body; // _id is blogId
+        const userId = req.session.user;
+
+        const response = await commentController.createComment({ _id, userId, content, type });
         if(response.error) {
             return res.status(400).json({message: response.error});
         }

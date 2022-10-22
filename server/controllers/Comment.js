@@ -1,7 +1,9 @@
 import Comment from "../models/Comment.js";
 import { User } from "../models/User.js";
 import Movie from "../models/Movie.js";
+import Blog from "../models/Blogs/Blog.js";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 dotenv.config({ path: "../.env" });
 
 export default class CommentController {
@@ -25,32 +27,38 @@ export default class CommentController {
    * console.log("error", error);
    * });
    */
-  async postCommentMovies({ userId, imdbId, comment, codeComment }) {
+  async addComment({idOfCommentedItem, type, userId, content }) {
     try {
-      const user = await User.findById(userId);
-      const movie = await Movie.findOne({ imdbId: imdbId });
-      // all types of comments, profiles, movies, clubs, discussionsClub etc..
-      const codeComments = [
+      if(!userId || !content || !idOfCommentedItem || !type) {
+        return {error: "Please provide all the required fields"};
+      }
+      // verify if idOfCommentedItem is a valid id
+      if(!mongoose.Types.ObjectId.isValid(idOfCommentedItem)) {
+        return {error: "Invalid idOfCommentedItem"};
+      }
+      const user = await User.findById({ _id: userId });
+      if (!user) {
+        return { error: "User not found" };
+      }
+            // all types of comments, profiles, movies, clubs, discussionsClub etc..
+      const types = [
         "profile",
         "movie",
         "clubDiscussion",
         "clubEvent",
         "review",
         "blog",
-      ]
+      ];
       // check if the comment type is valid
-      if (!codeComments.includes(codeComment)) {
+      if (!types.includes(type)) {
         return { error: "Invalid comment type" };
-      }
-      if (!user || !movie || !codeComment) {
-        return { error: "User or movie not found", status: 404 };
       }
 
       const newComment = new Comment({
+        idOfCommentedItem,
         userId,
-        imdbId,
-        comment,
-        codeComment: codeComment,
+        content,
+        type,
       });
       await newComment.save();
       return { comment: newComment };
@@ -82,31 +90,33 @@ export default class CommentController {
    * console.log("error", error);
    * });
    */
-  async editCommentMovies({ userId, imdbId, comment, commentId }) {
+  async editComment({ userId, content,  commentId }) {
     try {
-      const user = await User.findById(userId);
-      const movie = await Movie.findOne({ imdbId: imdbId });
-      if (!user || !movie) {
+      console.log("userId", userId);
+      console.log("commentId", commentId);
+      console.log("content", content);
+      if(!commentId || !userId || !content) {
+        return { error: "No data provided!" };
+      }
+      const user = await User.findById({ _id: userId });
+      if (!user ) {
         return { error: "User or movie not found", status: 404 };
       }
 
-      const commentToEdit = await MoviesComments.findById(commentId);
+      const commentToEdit = await Comment.findById(commentId);
       if (commentToEdit.userId !== userId) {
         return {
           error: "You are not allowed to edit this comment",
           status: 403,
         };
       }
-
-      const editedComment = await MoviesComments.findByIdAndUpdate(
-        commentId,
-        {
-          comment,
-        },
-        { new: true }
-      );
-      return { comment: editedComment };
+      // update the comment and save it in the database
+    commentToEdit.content = content;
+    commentToEdit.isEdited = true;
+    await commentToEdit.save();   
+      return { comment: commentToEdit };
     } catch (error) {
+      console.log("error", error);
       return { error: error.message };
     }
   }
@@ -117,23 +127,27 @@ export default class CommentController {
    * @description delete a comment, created by the user
    * @returns {Promise<{error: string}|{user: User}>}
    */
-  async deleteCommentMovies({ userId, commentId }) {
+  async deleteComment({ userId, commentId }) {
     try {
-      const user = await User.findById(userId);
+      console.log("userId", userId);
+      console.log("commentId", commentId);
+      const user = await User.findById({ _id: userId });
       if (!user) {
         return { error: "User not found", status: 404 };
       }
-      const commentToDelete = await MoviesComments.findById(commentId);
-      if (commentToDelete.userId !== userId) {
+      const commentToDelete = await Comment.findById(commentId); 
+      //only admin or the user who created the comment can delete it
+      if(commentToDelete.userId !== userId || user.role !== "admin") {
         return {
           error: "You are not allowed to delete this comment",
           status: 403,
         };
       }
 
-      await MoviesComments.findByIdAndDelete(commentId);
+      await Comment.findByIdAndDelete(commentId);
       return { message: "Comment deleted" };
     } catch (error) {
+      console.log("error", error);
       return { error: error.message };
     }
   }
@@ -143,13 +157,13 @@ export default class CommentController {
    * @param {string} commentId
    * @description upvote a comment,
    */
-  async upvoteCommentMovies({ userId, commentId }) {
+  async upvoteComment({ userId, commentId }) {
     try {
       const user = await User.findById(userId);
       if (!user) {
         return { error: "User not found", status: 404 };
       }
-      const commentToUpvote = await MoviesComments.findById(commentId);
+      const commentToUpvote = await Comment.findById(commentId);
       console.log("commentToUpvote", commentToUpvote.upvotes);
 
       if (commentToUpvote.upvotes.includes(userId)) {
@@ -183,13 +197,13 @@ export default class CommentController {
    * @returns {Promise<{error: string}|{user: User}>}
    * @memberof Comment
    */
-  async downvoteCommentMovies({ userId, commentId }) {
+  async downvoteComment({ userId, commentId }) {
     try {
       const user = await User.findById(userId);
       if (!user) {
         return { error: "User not found", status: 404 };
       }
-      const commentToDownvote = await MoviesComments.findById(commentId);
+      const commentToDownvote = await Comment.findById(commentId);
       if (commentToDownvote.downvotes.includes(userId)) {
         return {
           error: "You have already downvoted this comment",
@@ -219,19 +233,13 @@ export default class CommentController {
    * @description get all comments for a movie, limit to 10
    * @returns {Promise<{error: string}|{user: User}>}
    */
-  async getCommentsMovies(data) {
+  async getComments({idOfCommentedItem,  offset, limit}) {
     try {
-      console.log("data", data);
-
-      const imdbId = data.imdbId;
-      let next = data.next;
-
-      console.log("imdId", imdbId);
-      console.log("next", next);
-      const comments = await MoviesComments.find({ imdbId: imdbId })
-        .limit(next)
-        .sort({ createdAt: -1 })
-        .populate("userId", "username");
+      !offset && (offset = 0);
+      !limit && (limit = 10);
+      console.log(idOfCommentedItem, offset, limit);
+      const comments = await Comment.find({idOfCommentedItem})
+      console.log("comments", comments);
 
       // only return upvotes and downvotes count
       const commentsWithVotes = comments.map((comment) => {
@@ -244,11 +252,53 @@ export default class CommentController {
           downvotes: comment.downvotes.length,
         };
       });
+      let next = ""
       next = next + 10 > commentsWithVotes.length ? null : next + 10;
 
       return { comments: commentsWithVotes, next: next };
     } catch (error) {
+      console.log("error", error);
       return { error: error.message };
     }
   }
+/*
+  async getQuery(type, idOfCommentedItem) {
+    const typesAllowed = ["blogs", "movie", "events", "news", "discussions"];
+    if (!typesAllowed.includes(type)) {
+      return { error: "Invalid type", status: 400 };
+    }
+
+    let searchQuery = "";
+
+    switch (type) {
+      case "blogs":
+        searchQuery = await Comment.find({
+         idOfCommentedItem,
+          type: "blog",
+        });
+      case "movie":
+        searchQuery = await Comment.find({
+          idOfCommentedItem,
+          type: "movie",
+        });
+      case "events":
+        searchQuery = await Comment.find({
+          idOfCommentedItem,
+          type: "event",
+        });
+      case "news":
+        searchQuery = await Comment.find({
+          idOfCommentedItem,
+          type: "news",
+        });
+      case "discussions":
+        searchQuery = await Comment.find({
+          idOfCommentedItem,
+          type: "discussion",
+        });
+      default:
+        break;
+    }
+    return searchQuery;
+  }*/
 }

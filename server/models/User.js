@@ -60,15 +60,10 @@ const userSchema = new mongoose.Schema({
     required: false,
     default: Date.now,
   },
-  isAdmin: {
-    type: Boolean,
-    required: true,
-    default: false,
-  },
-  isSuperAdmin: {
-    type: Boolean,
-    required: true,
-    default: false,
+  role : {
+    type: String,
+    required: false,
+    default: "user",
   },
   isPrivate: {
     type: Boolean,

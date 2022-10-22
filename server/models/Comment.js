@@ -4,7 +4,8 @@ import { Schema } from "mongoose";
 const Comments = mongoose.model(
   "Comments",
   new Schema({
-    imdbId: {
+    // generic id for all types of comments
+    idOfCommentedItem: {
       type: String,
       required: true,
     },
@@ -12,11 +13,11 @@ const Comments = mongoose.model(
       type: String,
       required: true,
     },
-    comment: {
+    content: {
       type: String,
       required: true,
     },
-    codeComment: {
+    type: {
       type: String,
       required: true,
     },
@@ -25,6 +26,10 @@ const Comments = mongoose.model(
     },
     downvotes: {
         type: [String],
+    },
+    isEdited: {
+      type: Boolean,
+      default: false,
     },
     replies: {
         type: [Object],

@@ -50,26 +50,21 @@ commentRouter.get("/", (req, res) => {
  * @responseType- {string, object}
  */ 
 
-commentRouter.post("/post-comment-movies", async (req, res) => {
+commentRouter.post("/add-comment", async (req, res) => {
   try {
-    const { comment, imdbId, codeComment } = req.body;
-    if (!comment || !imdbId || !codeComment) {
-      return res.status(400).send({ error: "No data provided!" });
-    }
+      const {idOfCommentedItem, type, content} = req.body;
+      const userId = req.session.user;
 
-    const response = await commentController.postCommentMovies({
-      userId: req.session.user,
-      comment,
-      imdbId,
-      codeComment,
-    });
-    if (response.error) {
-      return res.status(400).send(response);
-    }
-    return res.status(200).send(response);
+      const response = await commentController.addComment({idOfCommentedItem, type, userId, content});
+      if(response.error) {
+          return res.status(400).json({message: response.error});
+      }
+      console.log("response", response);
+      res.status(200).json({message: response.comment});
   } catch (error) {
-    return res.status(400).send(error.message);
+      res.status(500).json({message: error.message});
   }
+
 });
 
 /**
@@ -85,16 +80,12 @@ commentRouter.post("/post-comment-movies", async (req, res) => {
  * @responseType- {string, object}
  */
 
-commentRouter.patch("/edit-comment-movies", async (req, res) => {
+commentRouter.post("/edit-comment", async (req, res) => {
   try {
-    const { comment, imdbId, commentId } = req.body;
-    if (!comment || !imdbId || !commentId) {
-      return res.status(400).send({ error: "No data provided!" });
-    }
-    const response = await commentController.editCommentMovies({
+    const { commentId, content } = req.body;
+    const response = await commentController.editComment({
       userId: req.session.user,
-      comment,
-      imdbId,
+      content,
       commentId,
     });
     if (response.error) {
@@ -120,13 +111,13 @@ commentRouter.patch("/edit-comment-movies", async (req, res) => {
  * 
  */
 
-commentRouter.delete("/delete-comment-movies", async (req, res) => {
+commentRouter.delete("/delete-comment", async (req, res) => {
   try {
     const { commentId } = req.body;
     if (!commentId) {
       return res.status(400).send({ error: "No data provided!" });
     }
-    const response = await commentController.deleteCommentMovies({
+    const response = await commentController.deleteComment({
       userId: req.session.user,
       commentId,
     });
@@ -151,13 +142,13 @@ commentRouter.delete("/delete-comment-movies", async (req, res) => {
  * @response    - {status: "success", comment: comment}
  * @responseType- {string, object}
  */
-commentRouter.post("/upvote-comment-movies", async (req, res) => {
+commentRouter.post("/upvote-comment", async (req, res) => {
   try {
     const { commentId } = req.body;
     if (!commentId) {
       return res.status(400).send({ error: "No data provided!" });
     }
-    const response = await commentController.upvoteCommentMovies({
+    const response = await commentController.upvoteComment({
       userId: req.session.user,
       commentId,
     });
@@ -183,13 +174,13 @@ commentRouter.post("/upvote-comment-movies", async (req, res) => {
  * @responseType- {string, object}
  */
 
-commentRouter.post("/downvote-comment-movies", async (req, res) => {
+commentRouter.post("/downvote-comment", async (req, res) => {
   try {
     const { commentId } = req.body;
     if (!commentId) {
       return res.status(400).send({ error: "No data provided!" });
     }
-    const response = await commentController.downvoteCommentMovies({
+    const response = await commentController.downvoteComment({
       userId: req.session.user,
       commentId,
     });
@@ -214,17 +205,15 @@ commentRouter.post("/downvote-comment-movies", async (req, res) => {
  * @response    - {status: "success", comments: comments}
  * @responseType- {string, object}
  */
-commentRouter.post("/get-comments-movies", async (req, res) => {
+commentRouter.post("/get-comments", async (req, res) => {
   try {
-    let { imdbId, next } = req.body;
-    if (!imdbId) {
+    let { idOfCommentedItem } = req.body;
+    if (!idOfCommentedItem) {
       return res.status(400).send({ error: "No data provided!" });
     }
-    !next ? (next = 0) : next;
-
-    const response = await commentController.getCommentsMovies({
-      imdbId,
-      next,
+    const response = await commentController.getComments({
+      idOfCommentedItem,
+      type,
     });
     if (response.error) {
       return res.status(400).send(response);
