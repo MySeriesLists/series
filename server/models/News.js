@@ -20,20 +20,27 @@ export default mongoose.model(
       required: false,
       unique: false,
     },
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: false,
+    },
     tags: {
       type: [String],
       required: false,
       unique: false,
     },
-    reactions: {// reactions with emoji and count
+    reactions: {
+      // reactions with emoji and count
       type: [Object],
       required: false,
       unique: false,
     },
     isLocked: {
-        type: Boolean,
-        required: false,
-        unique: false,
+      type: Boolean,
+      required: false,
+      unique: false,
     },
     createdAt: {
       type: Date,

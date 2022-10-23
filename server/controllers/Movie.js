@@ -629,7 +629,8 @@ export default class MovieController {
       if (!data) {
         return { error: "No data provided", status: 400 };
       }
-      const regex = new RegExp(data, "img"); // regex find movie containing search string
+      // regex to search for the title, 
+      const regex = new RegExp(data, "i");
       const options = { sort: { rating: -1 }, limit: 11 }; // sort by gt to lt rating
       const projection = {
         title: 1,

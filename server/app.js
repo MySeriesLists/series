@@ -19,6 +19,7 @@ import messageRouter from "./routes/messages.js";
 import reviewRouter from "./routes/review.js";
 import clubRouter from "./routes/club.js";
 import blogRouter from "./routes/blog.js";
+import newsRouter from "./routes/news.js";
 
 // use middleware
 app.use(express.json());
@@ -59,7 +60,7 @@ app.use('/messages', messageRouter);
 app.use('/review', reviewRouter);
 app.use('/club', clubRouter);
 app.use('/blog', blogRouter);
-
+app.use('/news', newsRouter);
 app.get("/", (req, res) => {
   if (req.session.user) {
     console.log(req.session.user);
