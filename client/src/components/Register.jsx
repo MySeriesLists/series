@@ -1,11 +1,10 @@
 import React from "react";
 import { GrGoogle, GrGithub } from "react-icons/gr";
-import Example from "./headers";
-
+import Navbar from "./Navbar";
 const Register = () => {
   return (
     <div>
-    <Example/>
+    <Navbar />
     <section className="bg-grey-50 dark:bg-gray-900">
       <div className="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
         <a
